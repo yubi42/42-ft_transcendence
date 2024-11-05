@@ -1,0 +1,13 @@
+Techstack:
+    Backend:
+        Django
+        PostgreSQL
+    Frontend:
+        JavaScript
+
+Languages:
+    Python      (Backend)
+    SQL         (Database)
+    Javascript  (Frontend)
+    html        (Frontend)
+    css         (Frontend)
