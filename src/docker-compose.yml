@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  test:
+    build: ./test
+    container_name: test
+    networks:
+      - app-network
+    expose:
+      - "8001"
+
+  gameplay:
+    build: ./gameplay
+    container_name: gameplay
+    networks:
+      - app-network
+    expose:
+      - "8002"
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "8000:80"  
+    depends_on:
+      - test
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
