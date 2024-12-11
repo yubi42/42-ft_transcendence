@@ -1,6 +1,13 @@
-ENV_FILE = --env-file src/.env
+ifneq ($(shell command -v docker compose 2>/dev/null),)
+DOCKER_COMPOSE = docker compose
+else ifneq ($(shell command -v docker-compose 2>/dev/null),)
+DOCKER_COMPOSE = docker-compose
+else
+$(error Neither "docker compose" nor "docker-compose" found. Please install Docker Compose.)
+endif
+endifENV_FILE = --env-file src/.env
 COMPOSE = -f ./src/docker-compose.yml
-COMPOSE_CMD = docker compose ${COMPOSE} ${ENV_FILE}
+COMPOSE_CMD = ${DOCKER_COMPOSE} ${COMPOSE} ${ENV_FILE}
 
 all: 
 	@${COMPOSE_CMD} build --no-cache
