@@ -119,7 +119,7 @@ networks:
 volumes:
   lobby_db:
     driver: local
-    name: lobby_db
+    name: db
     driver_opts:
       type: none
       o: bind
