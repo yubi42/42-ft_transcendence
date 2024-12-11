@@ -1,5 +1,16 @@
 services:
 
+  gameplay:
+    build: ./gameplay
+    container_name: ${GAMEPLAY_NAME}
+    # command: daphne app.asgi:application -b 0.0.0.0 -p ${GAMEPLAY_PORT}
+    depends_on:
+      - nginx
+    networks:
+      - app-network
+    expose:
+      - ${GAMEPLAY_PORT}
+
   lobby_api:
     build: ./lobby-api
     container_name: ${LOBBY_API_NAME}
