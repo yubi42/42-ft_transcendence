@@ -24,9 +24,11 @@
       <h1>PacPong</h1>
     </div>
     <div>
-      <p>Login</p>
+      <button id="login-button">Login</button>
+      <button id="logout-button" style="display:none;">Logout</button>
       <hr>
-      <p>Sign up</p>
+      <button id="signup-button">Signup</button>
+      <button id="profile-button" style="display:none;">Profile</button>
     </div>
 
   </div>
@@ -79,6 +81,7 @@
 	
   <script type="module" src="./js/game_3d.js"></script>
   <script src="./js/game-modes.js"></script>
+  <script type="module" src="./js/index.js"></script>
   <script>
     document.getElementById('test-api').addEventListener('click', async () => {
         const response = await fetch('/lobby/all/');

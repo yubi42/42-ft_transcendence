@@ -76,6 +76,36 @@ services:
     volumes:
       - ./nginx/static:/usr/share/nginx/html
 
+  userdata:
+    build:
+      context: ./userdata/
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py makemigrations &&
+           python manage.py migrate &&
+           gunicorn app.wsgi:application --bind 0.0.0.0:${USERDATA_PORT}"
+    expose:
+      - ${USERDATA_PORT}
+    env_file:
+      - ./userdata/.env
+    depends_on:
+      - userdata_db
+    networks:
+      - app-network
+      - userdata-network
+
+  userdata_db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=new_user
+      - POSTGRES_PASSWORD=new_password
+      - POSTGRES_DB=userdata_db
+    networks:
+      - userdata-network
+
+
 networks:
   app-network:
     driver: bridge
@@ -83,12 +113,15 @@ networks:
     driver: bridge
   lobby-redis-network:
     driver: bridge
+  userdata-network:
+    driver: bridge
 
 volumes:
   lobby_db:
     driver: local
-    name: db
+    name: lobby_db
     driver_opts:
       type: none
       o: bind
       device: /home/${USER}/data/lobby_db
+  postgres_data:
