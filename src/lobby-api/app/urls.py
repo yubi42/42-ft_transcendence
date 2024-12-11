@@ -20,5 +20,11 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('test/', views.test_view),
+    path('lobby/create/', views.create_lobby),
+    path('lobby/<int:lobby_id>/', views.get_lobby),
+    path('lobby/all/', views.all),
+    path('lobby/player_joined/<int:lobby_id>/', views.player_joined),
+    path('lobby/player_left/<int:lobby_id>/<str:user_name>/', views.player_left),
+    path('lobby/delete/<int:lobby_id>/', views.delete_lobby_entry),
+    path('lobby/<str:player>/<int:lobby_id>/<str:user_name>/', views.player_entry),
 ]

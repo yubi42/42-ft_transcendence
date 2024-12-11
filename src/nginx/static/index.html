@@ -6,6 +6,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Transcendence</title>
 	<link rel="stylesheet" href="./css/main.css">
+	<link rel="stylesheet" href="./css/game_3d.css">
+	<link rel="stylesheet" href="./css/game-modes.css">
+	<link rel="stylesheet" href="./css/navbar.css">
     <script type="importmap">
         {
           "imports": {
@@ -16,7 +19,73 @@
     </script>
 </head>
 <body>
-	<canvas id="three-canvas"></canvas>
-  <script type="module" src="./js/main.js"></script>
+  <div class="navbar">
+    <div>
+      <h1>PacPong</h1>
+    </div>
+    <div>
+      <p>Login</p>
+      <hr>
+      <p>Sign up</p>
+    </div>
+
+  </div>
+  <main>
+    <div class="chat"></div>
+    <div>
+      <div class="game-mode-tabs">
+        <div class="game-tab active" id="local-tab"><p>Local</p></div>
+        <div class="game-tab" id="online-tab"><p>Online</p></div>
+        <div class="game-tab" id="tournament-tab"><p>Tournament Mode</p></div>
+      </div>
+      <div class="game-modes">
+        <div class="game-selector active" id="local">
+          <p>Local</p>
+        </div>
+        <div class="game-selector" id="online">
+          <div class="online active">
+            <button id="prepare-lobby">Create Lobby</button>
+            <button id="list-lobbies">Join Lobby</button>
+            <img src="/svg/lock.svg" alt="locked">
+          </div>
+          <div class="online" id="lobby-list"><p>test</p></div>
+          <form class="online" id="lobby-form">
+            <h2>New Lobby:</h2>
+            <div>
+              <label for="lobby-name">Lobby Name:</label>
+              <input type="text" id="lobby-name" name="lobby_name" required>
+            </div>
+            <div>
+              <label for="lobby-password">password:</label>
+              <input type="password" id="lobby-password" name="lobby_password" placeholder="Leave empty for no password">
+            </div>
+            <button type="submit">Create</button>
+          </form>
+        </div>
+        <div class="game-selector" id="tournament">
+          <p>Tournament Mode</p>
+        </div>
+        <div class="game-selector" id="lobby">
+          <div class="player_button" id="p1"><p>P1</p></div>
+          <div class="player_button" id="p2"><p>P2</p></div>
+          <div class="start_button" id="start_game"><p>Start Game</p></div>
+        </div>
+      </div>
+    </div>
+    <button id="test-api">Test API</button>
+    <pre id="output"></pre>
+    <canvas id="three-canvas"></canvas> 
+  </main>
+	
+  <script type="module" src="./js/game_3d.js"></script>
+  <script src="./js/game-modes.js"></script>
+  <script>
+    document.getElementById('test-api').addEventListener('click', async () => {
+        const response = await fetch('/lobby/all/');
+        const data = await response.json();
+        document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    });
+  </script>
+
 </body>
 </html>

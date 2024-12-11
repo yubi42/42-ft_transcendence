@@ -1,0 +1,23 @@
+.navbar 
+{
+    display: flex;
+    justify-content: space-between;
+    padding: 30px;
+    height: 5vh;
+    align-items: center;
+    border-bottom: 2px solid rgb(253, 248, 229);
+}
+
+.navbar > div:first-of-type
+{
+    display: flex;
+    justify-content: flex-start;
+}
+
+.navbar > div:last-of-type
+{
+    display: flex;
+    justify-content: flex-end;
+    gap:  10px;
+}
+

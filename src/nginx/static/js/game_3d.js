@@ -10,7 +10,7 @@ const renderer = new THREE.WebGLRenderer({
     antialias: true
 });
 
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); // changed to canvas size, so that we do the sizing with css
 renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
 renderer.shadowMap.enabled = true;
 
@@ -19,7 +19,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color('rgb(30, 30, 30)');
 
 // Camera
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
 camera.position.set(0, 5, 12);
 scene.add(camera);
 
@@ -217,7 +217,7 @@ function checkGameOver(winner) {
     if (playerScore >= 10 || player2Score >= 10) {
         gameOver = true;
         showWinMessage(winner);
-        showResetButton();
+        // showResetButton();
     }
 }
 
@@ -228,7 +228,7 @@ function resetBall() {
 }
 
 // Show Reset Button
-function showResetButton() {
+/* function showResetButton() {
     const button = document.createElement('button');
     button.innerText = 'Reset Game';
     button.classList.add('reset-button');
@@ -248,7 +248,7 @@ function showResetButton() {
         }
         button.remove();
     });
-}
+} */
 
 // Animation loop
 function animate() {
@@ -268,9 +268,9 @@ document.addEventListener('keydown', (event) => {
 animate();
 
 // Resize handling
-function setLayout() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
-window.addEventListener('resize', setLayout);
+// function setLayout() {
+//     camera.aspect = window.innerWidth / window.innerHeight;
+//     camera.updateProjectionMatrix();
+//     renderer.setSize(window.innerWidth, window.innerHeight);
+// }
+// window.addEventListener('resize', setLayout);
