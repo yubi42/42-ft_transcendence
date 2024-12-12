@@ -1,21 +1,68 @@
-version: '3.8'
-
 services:
-  test:
-    build: ./test
-    container_name: test
-    networks:
-      - app-network
-    expose:
-      - "8001"
 
   gameplay:
     build: ./gameplay
-    container_name: gameplay
+    container_name: ${GAMEPLAY_NAME}
+    # command: daphne app.asgi:application -b 0.0.0.0 -p ${GAMEPLAY_PORT}
+    depends_on:
+      - nginx
     networks:
       - app-network
     expose:
-      - "8002"
+      - ${GAMEPLAY_PORT}
+
+  lobby_api:
+    build: ./lobby-api
+    container_name: ${LOBBY_API_NAME}
+    depends_on:
+      - ${LOBBY_DB_NAME}
+    environment:
+      POSTGRES_DB: ${LOBBY_DB_NAME}
+      POSTGRES_USER: ${LOBBY_DB_USER}
+      POSTGRES_PASSWORD: ${LOBBY_DB_PASSWORD}
+      PGPORT: ${LOBBY_DB_PORT}
+    networks:
+      - app-network
+      - lobby-network
+    expose:
+      - ${LOBBY_API_PORT}
+
+  lobby_db:
+    image: postgres:15
+    container_name: ${LOBBY_DB_NAME}
+    restart: always
+    environment:
+      POSTGRES_DB: ${LOBBY_DB_NAME}
+      POSTGRES_USER: ${LOBBY_DB_USER}
+      POSTGRES_PASSWORD: ${LOBBY_DB_PASSWORD}
+      PGPORT: ${LOBBY_DB_PORT}
+    volumes:
+      - lobby_db:/var/lib/postgresql/data
+    networks:
+      - lobby-network
+    expose:
+      - ${LOBBY_DB_PORT}
+
+  lobby_websocket:
+    build: ./lobby-websocket
+    container_name: ${LOBBY_WEBSOCKET_NAME}
+    command: daphne app.asgi:application -b 0.0.0.0 -p 8003
+    depends_on:
+      - ${LOBBY_API_NAME}
+      - lobby_redis
+    networks:
+      - app-network
+      - lobby-redis-network
+    expose:
+      - ${LOBBY_WEBSOCKET_PORT}
+
+  lobby_redis:
+    image: redis:latest
+    container_name: lobby_redis
+    expose:
+      - "6379"
+    networks:
+      - lobby-redis-network
 
   nginx:
     build: ./nginx
@@ -23,10 +70,58 @@ services:
     ports:
       - "8000:80"  
     depends_on:
-      - test
+      - ${LOBBY_API_NAME}
     networks:
       - app-network
+    volumes:
+      - ./nginx/static:/usr/share/nginx/html
+
+  userdata:
+    build:
+      context: ./userdata/
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py makemigrations &&
+           python manage.py migrate &&
+           gunicorn app.wsgi:application --bind 0.0.0.0:${USERDATA_PORT}"
+    expose:
+      - ${USERDATA_PORT}
+    env_file:
+      - ./userdata/.env
+    depends_on:
+      - userdata_db
+    networks:
+      - app-network
+      - userdata-network
+
+  userdata_db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=new_user
+      - POSTGRES_PASSWORD=new_password
+      - POSTGRES_DB=userdata_db
+    networks:
+      - userdata-network
+
 
 networks:
   app-network:
     driver: bridge
+  lobby-network:
+    driver: bridge
+  lobby-redis-network:
+    driver: bridge
+  userdata-network:
+    driver: bridge
+
+volumes:
+  lobby_db:
+    driver: local
+    name: db
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/${USER}/data/lobby_db
+  postgres_data:
