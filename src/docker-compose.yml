@@ -124,3 +124,4 @@ volumes:
       type: none
       o: bind
       device: /home/${USER}/data/lobby_db
+  userdata_data:
