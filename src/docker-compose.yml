@@ -97,7 +97,7 @@ services:
   userdata_db:
     image: postgres:15
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - ./userdata_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_USER=new_user
       - POSTGRES_PASSWORD=new_password
@@ -124,4 +124,3 @@ volumes:
       type: none
       o: bind
       device: /home/${USER}/data/lobby_db
-  postgres_data:
