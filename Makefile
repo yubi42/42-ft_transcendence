@@ -32,9 +32,9 @@ fclean:
 re:	fclean run
 
 fclean-local: fclean
-	docker run --rm -v /home/thofting/data/lobby_db:/data alpine sh -c "rm -rf /data/*"
-	docker run --rm -v /home/thofting/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
-	docker run --rm -v /home/thofting/data:/parentdir alpine sh -c "rm -rf /parentdir/userdata_db"
+	docker run --rm -v /home/${USER}/data/lobby_db:/data alpine sh -c "rm -rf /data/*"
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/userdata_db"
 
 fclean-local-run: fclean-local run
 
