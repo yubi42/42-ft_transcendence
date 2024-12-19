@@ -4,8 +4,6 @@ services:
     build: ./gameplay
     container_name: ${GAMEPLAY_NAME}
     # command: daphne app.asgi:application -b 0.0.0.0 -p ${GAMEPLAY_PORT}
-    depends_on:
-      - nginx
     networks:
       - app-network
     expose:
@@ -71,6 +69,7 @@ services:
       - "8000:80"  
     depends_on:
       - ${LOBBY_API_NAME}
+      - gameplay
     networks:
       - app-network
     volumes:

@@ -13,9 +13,6 @@ document.getElementById('list-lobbies').addEventListener('click', listLobbies);
 
 document.getElementById('lobby-form').addEventListener('submit', createLobby);
 
-document.getElementById('p1').addEventListener('click', () => selectPlayer('p1'));
-document.getElementById('p2').addEventListener('click', () => selectPlayer('p2'));
-
 // functions
 function generateTab() 
 {
@@ -28,6 +25,13 @@ function generateTab()
     }
   );
   document.getElementById(tabName).classList.add('active');
+  document.querySelectorAll('.online').forEach(content => 
+    {
+      content.classList.remove('active');
+    }
+  );
+  document.getElementById('option-choose').classList.add('active');
+  closeSocket();
 }
 
 function prepareLobby() 
@@ -36,7 +40,8 @@ function prepareLobby()
     {
       content.classList.remove('active');
     }
-  );  document.querySelector('form.online').classList.add('active');
+  );  
+  document.querySelector('form.online').classList.add('active');
 }
 
 function createLobby(event)
@@ -58,7 +63,7 @@ function createLobby(event)
       if(response.error)
         console.log('Error: ' + response.error);
       else 
-        joinLobby(response.lobby);
+        joinLobby(response.lobby, response.lobby_name);
     })
     .catch(error => {
       console.log('Fetch error: ' + error);
@@ -66,52 +71,137 @@ function createLobby(event)
   );
 }
 
+function lobbyFull(lobby_id)
+{
+  return fetch(`/lobby/${lobby_id}/`, 
+    {
+      method: 'GET'
+    })
+    .then(data => data.json())
+    .then(response =>
+    {
+      if(response.error)
+      {
+        console.log('Error: ' + response.error);
+        return true ;
+      }
+      return response.lobby.current_player_count >= 2;
+    })
+    .catch(error => {
+      console.log('Fetch error: ' + error);
+    }
+  );
+}
+
+function selectPlayer(role, name, db_value) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+      if (db_value === "None")
+      {
+          const message = {
+          action: `${role}_select`
+          };
+          socket.send(JSON.stringify(message));
+      }
+      else if (db_value === name)
+      {
+        const message = {
+        action: `${role}_deselect`
+        };
+        socket.send(JSON.stringify(message));
+    }
+
+  }
+}
+
 function generateGuestName() {
   const randomNumber = Math.floor(1000 + Math.random() * 9000); // Generates a random 4-digit number
   return `guest${randomNumber}`;
 }
 
-function joinLobby(lobby_id)
+function joinLobby(lobby_id, lobby_name)
 {
+  lobbyFull(lobby_id).then(is_full => {
+    if (is_full) {
+      alert('Lobby is full. Cannot join.');
+      return;
+    }
+
   const name = generateGuestName();
   const url = `/ws/lobby/${lobby_id}/${name}/`;
+  const p1 = document.getElementById('p1');
+  const p2 = document.getElementById('p2');
+  let roles = {
+    p1: "None",
+    p2: "None"
+  };
+
   socket = new WebSocket(url);
 
-  socket.onopen = () => console.log('WebSocket connected');
+  socket.onopen = () => {
+    console.log('WebSocket connected');
+    document.getElementById('lobby-header').textContent = `Lobby: ${lobby_name}`;
+    socket.send(JSON.stringify({
+      action: 'init_player_roles',
+    }));
+    document.querySelectorAll('.online').forEach(content => 
+      {
+        content.classList.remove('active');
+      }
+    );
+    document.getElementById('lobby').classList.add('active')
+    p1.addEventListener('click', () => selectPlayer('p1', name, roles.p1));
+    p2.addEventListener('click', () => selectPlayer('p2', name, roles.p2));    
+  };
 
   socket.onmessage = (e) => {
+      console.log("Raw WebSocket message received:", e.data);
       const data = JSON.parse(e.data);
-
-      if (data.type === 'start_game') {
+      if (data.type === 'start_game')
+      {
           console.log('Game starting...');
-      } else if (data.type === 'enable_start_button') {
+      } 
+      else if (data.type === 'enable_start_button')
+      {
           enableStartButton(lobby_id);
       }
+      else if (data.type === 'disable_start_button')
+        {
+            disableStartButton();
+        }
       else if (data.type === 'update_roles') {
-        const roles = data.roles;
+        roles = data.roles;
+        // p1.onclick = selectPlayer.bind(null, 'p1', name, roles.p1);
+        // p2.onclick = selectPlayer.bind(null, 'p2', name, roles.p1);
 
-        // For Player 1
-        if (roles.p1) {
-            document.getElementById('p1-btn').classList.add('player_selected');
-            document.getElementById('p1-btn').onclick = null;  // Disable click
+        if (roles.p1 != "None") {
+            p1.classList.add('player_selected');
+            p1.innerHTML = `<p>P1</p>${roles.p1}`
         } else {
-            document.getElementById('p1-btn').classList.remove('player_selected');
-            document.getElementById('p1-btn').onclick = selectPlayer.bind(null, 'p1');  // Enable click
+            p1.classList.remove('player_selected');
+            p1.innerHTML = `<p>P1</p>`
         }
 
-        // For Player 2
-        if (roles.p2) {
-            document.getElementById('p2-btn').classList.add('player_selected');
-            document.getElementById('p2-btn').onclick = null;
+        if (roles.p2 != "None") {
+            p2.classList.add('player_selected');
+            p2.innerHTML = `<p>P2</p>${roles.p2}`
         } else {
-            document.getElementById('p2-btn').classList.remove('player_selected');
-            document.getElementById('p2-btn').onclick = selectPlayer.bind(null, 'p2');
+            p2.classList.remove('player_selected');
+            p2.innerHTML = `<p>P2</p>`
         }
     }
   };
-
+  
   socket.onerror = console.error;
   socket.onclose = () => console.log('WebSocket closed');
+  
+  window.addEventListener('beforeunload', closeSocket);
+  });
+}
+
+function closeSocket() {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close();
+  }
 }
 
 document.getElementById('test-api').addEventListener('click', async () => {
@@ -142,6 +232,7 @@ function listLobbies()
         <h3>${lobby.name}</h3>
         ${lobby.password ? '<img src="/svg/lock.svg" alt="password required">' : '<img src="/svg/lock-open.svg" alt="no password required">'}
       `;
+      lobbyDiv.onclick = () => joinLobby(lobby.id, lobby.name);
       lobbyList.appendChild(lobbyDiv);
       });
     })
@@ -150,20 +241,17 @@ function listLobbies()
     });
 } 
 
-function selectPlayer(playerId) {
-  if (socket && socket.readyState === WebSocket.OPEN) {
-      const message = {
-          action: `${playerId}_select`
-      };
-
-      socket.send(JSON.stringify(message));
-  }
-}
 
 function enableStartButton(lobby_id) {
   const start_button = document.getElementById('start_game');
-  start_button.classList.add('start-enabled');
+  start_button.classList.add('start_enabled');
   start_button.addEventListener('click', () => startGame(lobby_id))
+}
+
+function disableStartButton() {
+  const start_button = document.getElementById('start_game');
+  start_button.classList.remove('start_enabled');
+  start_button.onclick = null;
 }
 
 function startGame(lobby_id)
@@ -179,4 +267,3 @@ function getCookie(name) {
     ?.split('=')[1];
   return cookieValue || '';
 }
-
