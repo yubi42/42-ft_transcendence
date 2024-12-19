@@ -1,15 +1,15 @@
 ifneq ($(shell command -v docker compose 2>/dev/null),)
-DOCKER_COMPOSE = docker compose
+DOCKER_COMPOSE = docker-compose
 else ifneq ($(shell command -v docker-compose 2>/dev/null),)
 DOCKER_COMPOSE = docker-compose
 else
 $(error Neither "docker compose" nor "docker-compose" found. Please install Docker Compose.)
 endif
-endifENV_FILE = --env-file src/.env
+ENV_FILE = --env-file src/.env
 COMPOSE = -f ./src/docker-compose.yml
 COMPOSE_CMD = ${DOCKER_COMPOSE} ${COMPOSE} ${ENV_FILE}
 
-all: 
+all:
 	@${COMPOSE_CMD} build --no-cache
 	mkdir -p /home/${USER}/data/lobby_db
 	mkdir -p /home/${USER}/data/userdata_db
@@ -32,11 +32,11 @@ fclean:
 re:	fclean run
 
 fclean-local: fclean
-	docker run --rm -v /home/thofting/data/lobby_db:/data alpine sh -c "rm -rf /data/*"
-	docker run --rm -v /home/thofting/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
-	docker run --rm -v /home/thofting/data:/parentdir alpine sh -c "rm -rf /parentdir/userdata_db"
+	docker run --rm -v /home/${USER}/data/lobby_db:/data alpine sh -c "rm -rf /data/*"
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/userdata_db"
 
 fclean-local-run: fclean-local run
 
-		
+
 .PHONY: all up run down clean fclean re reset
