@@ -10,8 +10,9 @@ COMPOSE = -f ./src/docker-compose.yml
 COMPOSE_CMD = ${DOCKER_COMPOSE} ${COMPOSE} ${ENV_FILE}
 
 all: 
-	sudo rm -rf /home/${USER}/data/lobby_db
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
 	mkdir -p /home/${USER}/data/lobby_db
+	mkdir -p /home/${USER}/data/userdata_db
 	@${COMPOSE_CMD} build --no-cache
 
 up:
@@ -32,9 +33,11 @@ fclean:
 re:	fclean run
 
 fclean-local: fclean
-	sudo rm -rf /home/${USER}/data/lobby_db
+	docker run --rm -v /home/${USER}/data/lobby_db:/data alpine sh -c "rm -rf /data/*"
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/userdata_db"
 
 fclean-local-run: fclean-local run
 
-		
+
 .PHONY: all up run down clean fclean re reset
