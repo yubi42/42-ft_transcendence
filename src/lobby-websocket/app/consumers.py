@@ -99,7 +99,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         }))
 
     async def assign_role(self, role):
-        url = f"http://lobby_api:8002/lobby/player_select/{role}/{self.lobby_id}/{self.user_name}/"
+        url = f"http://nginx:80/lobby/player_select/{role}/{self.lobby_id}/{self.user_name}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
@@ -113,7 +113,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         await self.update_roles()
 
     async def unassign_role(self, role):
-        url = f"http://lobby_api:8002/lobby/player_deselect/{role}/{self.lobby_id}/"
+        url = f"http://nginx:80/lobby/player_deselect/{role}/{self.lobby_id}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
@@ -137,7 +137,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
 
     async def init_player_roles(self):
         # Send updated roles to this WebSocket
-        url = f"http://lobby_api:8002/lobby/players/{self.lobby_id}/"
+        url = f"http://nginx:80/lobby/players/{self.lobby_id}/"
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
             if response.status_code != 200:
@@ -158,7 +158,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         }))
 
     async def player_joined(self):
-        url = f"http://lobby_api:8002/lobby/player_joined/{self.lobby_id}/"
+        url = f"http://nginx:80/lobby/player_joined/{self.lobby_id}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
@@ -166,7 +166,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                 return
     
     async def player_left(self):
-        url = f"http://lobby_api:8002/lobby/player_left/{self.lobby_id}/{self.user_name}/"
+        url = f"http://nginx:80/lobby/player_left/{self.lobby_id}/{self.user_name}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
@@ -180,7 +180,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
             return data.get('cur_player')
 
     async def delete_lobby_entry(self):
-        url = f"http://lobby_api:8002/lobby/delete/{self.lobby_id}/"
+        url = f"http://nginx:80/lobby/delete/{self.lobby_id}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
