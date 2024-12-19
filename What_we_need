@@ -21,11 +21,11 @@ Spec's for game history in userdata management:
 user-api/game
 
 POST user-api/game/add
-Request: game-id, game-mode (singleplayer, remote), player, result, time, (unexpected events occured), detailed information
+Request: game-id, game-mode (singleplayer, remote), player, result, time, (unexpected events occured), detailed information, backend token
 Response: Status code
 
 GET user-api/game/history
-Request: user-name, number of requested games, (index range maybe)
+Request: user-name, number of requested games, (index range maybe), auth token
 Response: Status code, games
 
 Need for api:
