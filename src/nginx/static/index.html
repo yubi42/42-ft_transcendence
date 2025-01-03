@@ -84,8 +84,9 @@
   </main>
 	
   <!-- <script type="module" src="./js/game_3d.js"></script> -->
-  <script src="./js/game-modes.js"></script>
+  <script type="module" src="./js/auth.js"></script>
   <script type="module" src="./js/index.js"></script>
+  <script type="module" src="./js/game-modes.js"></script>
   <script>
     document.getElementById('test-api').addEventListener('click', async () => {
         const response = await fetch('/lobby/all/');

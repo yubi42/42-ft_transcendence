@@ -1,3 +1,5 @@
+import { getCSRFToken } from './auth.js';
+
 // add functions to html elements
 let socket;
 
@@ -52,14 +54,16 @@ function createLobby(event)
   fetch('/lobby/create/', 
     {
       method: 'POST',
-      // headers: {
-      //   'X-CSRFToken': getCookie('csrftoken'), // Ensure CSRF token is sent
-      // },
+      headers: {
+        'X-CSRFToken': getCSRFToken(),
+      },
+      credentials: 'include',
       body: formData,
     })
     .then(data => data.json())
     .then(response =>
     {
+      console.log('Raw response:', response);
       if(response.error)
         console.log('Error: ' + response.error);
       else 
