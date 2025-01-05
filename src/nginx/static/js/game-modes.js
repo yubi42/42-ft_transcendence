@@ -1,7 +1,8 @@
 import { getCSRFToken } from './auth.js';
 
 // add functions to html elements
-let socket;
+let lobby_socket;
+let gameplay_socket;
 
 document.querySelectorAll('.game-tab').forEach(tab => 
   {
@@ -33,7 +34,7 @@ function generateTab()
     }
   );
   document.getElementById('option-choose').classList.add('active');
-  closeSocket();
+  closeSockets();
 }
 
 function prepareLobby() 
@@ -98,20 +99,20 @@ function lobbyFull(lobby_id)
 }
 
 function selectPlayer(role, name, db_value) {
-  if (socket && socket.readyState === WebSocket.OPEN) {
+  if (lobby_socket && lobby_socket.readyState === WebSocket.OPEN) {
       if (db_value === "None")
       {
           const message = {
           action: `${role}_select`
           };
-          socket.send(JSON.stringify(message));
+          lobby_socket.send(JSON.stringify(message));
       }
       else if (db_value === name)
       {
         const message = {
         action: `${role}_deselect`
         };
-        socket.send(JSON.stringify(message));
+        lobby_socket.send(JSON.stringify(message));
     }
 
   }
@@ -139,12 +140,12 @@ function joinLobby(lobby_id, lobby_name)
     p2: "None"
   };
 
-  socket = new WebSocket(url);
+  lobby_socket = new WebSocket(url);
 
-  socket.onopen = () => {
-    console.log('WebSocket connected');
+  lobby_socket.onopen = () => {
+    console.log('Lobby WebSocket connected');
     document.getElementById('lobby-header').textContent = `Lobby: ${lobby_name}`;
-    socket.send(JSON.stringify({
+    lobby_socket.send(JSON.stringify({
       action: 'init_player_roles',
     }));
     document.querySelectorAll('.online').forEach(content => 
@@ -157,8 +158,7 @@ function joinLobby(lobby_id, lobby_name)
     p2.addEventListener('click', () => selectPlayer('p2', name, roles.p2));    
   };
 
-  socket.onmessage = (e) => {
-      console.log("Raw WebSocket message received:", e.data);
+  lobby_socket.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === 'start_game')
       {
@@ -166,7 +166,7 @@ function joinLobby(lobby_id, lobby_name)
       } 
       else if (data.type === 'enable_start_button')
       {
-          enableStartButton(lobby_id);
+          enableStartButton(lobby_id, roles.p1 == name ? 'p1' : 'p2');
       }
       else if (data.type === 'disable_start_button')
         {
@@ -195,16 +195,19 @@ function joinLobby(lobby_id, lobby_name)
     }
   };
   
-  socket.onerror = console.error;
-  socket.onclose = () => console.log('WebSocket closed');
+  lobby_socket.onerror = console.error;
+  lobby_socket.onclose = () => console.log('Lobby WebSocket closed');
   
-  window.addEventListener('beforeunload', closeSocket);
+  window.addEventListener('beforeunload', closeSockets);
   });
 }
 
-function closeSocket() {
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.close();
+function closeSockets() {
+  if (lobby_socket && lobby_socket.readyState === WebSocket.OPEN) {
+    lobby_socket.close();
+  }
+  if (gameplay_socket && gameplay_socket.readyState === WebSocket.OPEN) {
+    gameplay_socket.close();
   }
 }
 
@@ -246,10 +249,10 @@ function listLobbies()
 } 
 
 
-function enableStartButton(lobby_id) {
+function enableStartButton(lobby_id, player) {
   const start_button = document.getElementById('start_game');
   start_button.classList.add('start_enabled');
-  start_button.addEventListener('click', () => startGame(lobby_id))
+  start_button.addEventListener('click', () => startGame(lobby_id, player))
 }
 
 function disableStartButton() {
@@ -258,16 +261,56 @@ function disableStartButton() {
   start_button.onclick = null;
 }
 
-function startGame(lobby_id)
+function startGame(lobby_id, player)
 {
-  console.log(`Rdy to start game for ${lobby_id}`)
-}
+  const url = `/ws/gameplay/${lobby_id}/`;
+  gameplay_socket = new WebSocket(url);
 
-// helper functions
-function getCookie(name) {
-  const cookieValue = document.cookie
-    .split('; ')
-    .find(row => row.startsWith(name + '='))
-    ?.split('=')[1];
-  return cookieValue || '';
+  const encodeState = (player, direction, moving) => {
+    const playerBit = (player == 'p1' ? 0 : 1);
+    const directionBit = (direction == 'up' ? 1 : 0);
+    const movingBit = (moving ? 1 : 0);
+    return ((playerBit << 2) | (directionBit << 1) | movingBit);
+  }
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'w')
+      gameplay_socket.send(encodeState((player ? player : 'p1'), 'up', 1));
+    else if (event.key === 's')
+      gameplay_socket.send(encodeState((player ? player : 'p1'), 'down', 1));
+    else if (event.key === 'ArrowUp')
+      gameplay_socket.send(encodeState((player ? player : 'p2'), 'up', 1));
+    else if (event.key === 'ArrowDown')
+      gameplay_socket.send(encodeState((player ? player : 'p2'), 'down', 1));
+  };
+
+  const handleKeyUp = (event) => {
+    if (event.key === 'w')
+      gameplay_socket.send(encodeState((player ? player : 'p1'), 'up', 0));
+    else if (event.key === 's')
+      gameplay_socket.send(encodeState((player ? player : 'p1'), 'down', 0));
+    else if (event.key === 'ArrowUp')
+      gameplay_socket.send(encodeState((player ? player : 'p2'), 'up', 0));
+    else if (event.key === 'ArrowDown')
+      gameplay_socket.send(encodeState((player ? player : 'p2'), 'down', 0));
+  };
+
+  gameplay_socket.onopen = () => {
+    console.log('Gameplay WebSocket open');
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+  };
+
+  gameplay_socket.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    console.log("Received message:", message);
+  };
+
+  gameplay_socket.onerror = console.error;
+
+  gameplay_socket.onclose = () => {
+    console.log('Gameplay WebSocket closed');
+    document.removeEventListener('keydown', handleKeyDown);
+    document.removeEventListener('keyup', handleKeyUp);
+  }
 }
