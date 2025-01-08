@@ -54,7 +54,6 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         elif action == 'init_player_roles':
             await self.init_player_roles()
         elif action == 'start_game':
-            # Broadcast game start to the lobby
             await self.channel_layer.group_send(
                 self.lobby_group_name,
                 {
