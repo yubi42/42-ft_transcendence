@@ -23,7 +23,7 @@ def create_lobby(request):
 
         if auth_response.status_code != 200:
             return JsonResponse({'error': 'Unauthorized user'}, status=401)
-
+        
         try:
             lobby = Lobby(name=name)
             if raw_password:

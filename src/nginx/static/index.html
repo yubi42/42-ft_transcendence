@@ -71,6 +71,7 @@
             </div>
             <button class="start_button" id="start_game">Start Game</button>
           </div>
+          <div class="online" id="game"><p id="score">Left: 0 | Right: 0</p><canvas id="game-canvas"></canvas></div>
         </div>
         <div class="game-selector" id="tournament">
           <p>Tournament Mode</p>
@@ -78,22 +79,20 @@
       </div>
     </div>
 
-    <button id="test-api">Test API</button>
+    <!-- <button id="test-api">Test API</button> -->
     <pre id="output"></pre>
     <!-- <canvas id="three-canvas"></canvas>  -->
   </main>
 	
   <!-- <script type="module" src="./js/game_3d.js"></script> -->
-  <script type="module" src="./js/auth.js"></script>
-  <script type="module" src="./js/index.js"></script>
+  <!-- <script type="module" src="./js/auth.js"></script> -->
+  <script type="module" src="./js/sockets.js"></script>
+  <script type="module" src="./js/game-handling.js"></script>
+  <script type="module" src="./js/lobby-creation.js"></script>
+  <script type="module" src="./js/lobby-handling.js"></script>
   <script type="module" src="./js/game-modes.js"></script>
-  <script>
-    document.getElementById('test-api').addEventListener('click', async () => {
-        const response = await fetch('/lobby/all/');
-        const data = await response.json();
-        document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-    });
-  </script>
-
+  <script type="module" src="./js/index.js"></script>
+<!--   <script type="module" src="./js/profile.js"></script>
+ -->
 </body>
 </html>
