@@ -1,7 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .signals import game_update_signal, game_init_signal
 import asyncio, time, threading, json
-import logging
+# import logging
 
 # from multiprocessing.shared_memory import SharedMemory
 # from channels.db import database_sync_to_async
@@ -14,7 +14,7 @@ PADDLE_WIDTH = 0.005
 PADDLE_HEIGHT = 0.05
 BALL_SIZE = 0.01
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 class GameSession():
 	def __init__(self):
@@ -84,23 +84,23 @@ class PongGame(AsyncWebsocketConsumer):
             self.lobby_group_name,
             self.channel_name
         )
-		logger.debug("test")
+		# logger.debug("test")
 		if self.lobby_group_name not in self.GameSessions:
 			self.GameSessions[self.lobby_group_name] = GameSession()
-			logger.debug(f"Created new GameSession for lobby: {self.lobby_group_name}")
+			# logger.debug(f"Created new GameSession for lobby: {self.lobby_group_name}")
 
 		self.game_session = self.GameSessions[self.lobby_group_name]
 
 		if self.game_session.streaming == True:
-			logger.debug("Lobby is full. Rejecting connection.")
+			# logger.debug("Lobby is full. Rejecting connection.")
 			await self.close()
 			return
 
 		self.game_session.player_count += 1
-		logger.debug("player_count: %s, max_player_count: %s", self.game_session.player_count, self.max_player_count)
+		# logger.debug("player_count: %s, max_player_count: %s", self.game_session.player_count, self.max_player_count)
 		
 		if self.game_session.player_count == self.max_player_count:
-			logger.debug("two players connected")
+			# logger.debug("two players connected")
 			game_update_signal.connect(self.game_update_signal_handler, sender=self)
 			game_init_signal.connect(self.game_init_signal_handler, sender=self)
 			self.game_session.streaming = True
@@ -147,7 +147,6 @@ class PongGame(AsyncWebsocketConsumer):
 		)
 
 	async def player_left(self, event):
-		logger.debug("")
 		await self.send(text_data=json.dumps(event))
 
 	def decrease_player_count(self):
@@ -214,7 +213,6 @@ class PongGame(AsyncWebsocketConsumer):
 		self.game_session.iterationStartT = time.time()
 
 		while True:
-			logger.debug("in loop")
 			with self.game_session.player_count_lock:
 				if self.game_session.player_count != 2:
 					break
