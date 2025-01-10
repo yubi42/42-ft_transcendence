@@ -3,6 +3,7 @@ from django.shortcuts import render
 from django.db import IntegrityError
 from .models import Lobby
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,19 @@ def create_lobby(request):
     if request.method == 'POST':
         name = request.POST.get('lobby_name')
         raw_password = request.POST.get('lobby_password', '')
+        print("name: " + name)
+        auth_response = requests.get(
+            "http://nginx:80/user-api/profile/",
+            headers = {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': request.headers.get('X-CSRFToken'),
+            },
+            cookies=request.COOKIES
+        )
 
+        if auth_response.status_code != 200:
+            return JsonResponse({'error': 'Unauthorized user'}, status=401)
+        
         try:
             lobby = Lobby(name=name)
             if raw_password:

@@ -206,6 +206,17 @@
   visibility: visible;
 }
 
+#game {
+  height: 100%;
+  width: 100%;
+  position: relative
+}
+
+#score {
+  position: absolute;
+  z-index: 2;
+}
+
 /* .player_button {
   cursor: pointer;
   width: 20%;
