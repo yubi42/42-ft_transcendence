@@ -1,34 +1,67 @@
 from rest_framework import serializers
 from .models import GameData
+from user_management.models import Profile
 from django.contrib.auth.models import User
-from app.settings import GAME_MODES
 import re
 
 class GameDataSerializer(serializers.ModelSerializer):
+	players = serializers.ListField(
+		child=serializers.CharField(),
+		write_only=True
+	)
+
 	class Meta:
 		model = GameData
-		fields = '__all__'
-	
+		fields = ['id', 'gameMode', 'players', 'score', 'dateTime']
+
 	def validate_gameMode(self, value):
-		valid_modes = GAME_MODES
-		if value not in valid_modes:
-			raise serializers.ValidationError("Invalid gameMode. Valid options are: " +", ".join(valid_modes))
+		if value not in dict(GameData.GAME_MODES):
+			raise serializers.ValidationError("Invalid gameMode. Valid options are: " +
+												', '.join(dict(GameData.GAME_MODES).keys()))
 		return value
 	
 	def validate_score(self, value):
-		if not re.match(r'^\d+-\d+$', value):
-			raise serializers.ValidationError(
-				"Invalid score, must be in format 'number-number' (e.g., '1-12').")
+		if not value:
+			raise serializers.ValidationError({"score": "There is no score given"})
+		isinstance(value, int):
+		if not all(isinstance(score, int) and score >= 0 for score in value):
+			raise serializers.ValidationError("All scores must be non-negative integers.")
 		return value
 	
+	def validate_players(self, value):
+		profiles = []
+		if not value:
+			raise serializers.ValidationError({"players": "There must at least exist one player"})
+		for player_name in value:
+			try:
+				user = User.objects.get(username=player_name)
+				profile = Profile.objects.get(user=user)
+				profiles.append(profile)
+			except User.DoesNotExist:
+				raise serializers.ValidationError(f"User with username '{player_name}' does not exist.")
+			except Profile.DoesNotExist:
+				raise serializers.ValidationError(f"Profile for user '{player_name}' does not exist.")
+		return profiles
+
 	def validate(self, data):
-		if not User.objects.filter(username=data['player1']):
-			raise serializers.ValidationError({"player1": 
-				f"Player {data['player1']} does not exist."})
-		if data['gameMode'] == 'multi-player':
-			if not User.objects.filter(username=data['player2']):
-				raise serializers.ValidationError({"player2": 
-					f"Player {data['player2']} does not exist."})
-			if data['player1'] == data['player2']:
-				raise serializers.ValidationError(
-					"player1 and player2 cannot be the same.")
+		players = data.get("players",[])
+		gameMode = data.get("gameMode")
+		# number of players validation
+		if not players:
+			raise serializers.ValidationError({"players": "There must at least exist one player"})
+		if gameMode == 'single-player' and len(players) != 1:
+			raise serializers.ValidationError({"gameMode": f"Too many players for mode \'{gameMode}\'"})
+		if gameMode == 'multi-player' and len(players) < 2:
+			raise serializers.ValidationError({"gameMode": f"Not enough players for mode \'{gameMode}\'"})
+		return data
+	
+	def create(self, validated_data):
+		profiles = validated_data('players')
+		game = GameData.objects.create(**validated_data)
+		game.players.set(profiles)
+		return game
+	
+	def to_representation(self, instance):
+		representation = super().to_representation(instance)
+		representation['players'] = [profile.user.username for profile in instance.players.all()]
+		return representation
