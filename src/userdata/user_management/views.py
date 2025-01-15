@@ -13,6 +13,7 @@ from .serializers import UserSerializer, ProfileSerializer
 from django.middleware.csrf import get_token
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
+from game_data.serializers import GameDataSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,19 @@ def profile_view(request):
         data = serializer.data
         data['csrf_token'] = get_token(request)
         return Response(data, status=status.HTTP_200_OK)
+    except Profile.DoesNotExist:
+        return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['GET'])
+def stats_view(request):
+    if not request.user.is_authenticated:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        profile = Profile.objects.get(user=request.user)
+        stats = profile.stats
+        #data['csrf_token'] = get_token(request)
+        return Response(stats, status=status.HTTP_200_OK)
     except Profile.DoesNotExist:
         return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 

@@ -5,11 +5,16 @@ from django.dispatch import receiver
 from django.utils.crypto import get_random_string
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    display_name = models.CharField(max_length=50, unique=True)
-    avatar = models.ImageField(upload_to="avatars/", default="avatars/default.png")
-    friends = models.ManyToManyField("self", blank=True)
-    stats = models.JSONField(default=dict, blank=True)
+	user = models.OneToOneField(User, on_delete=models.CASCADE)
+	display_name = models.CharField(max_length=50, unique=True)
+	avatar = models.ImageField(upload_to="avatars/", default="avatars/default.png")
+	friends = models.ManyToManyField("self", blank=True)
 
-    def __str__(self):
-        return self.user.username
+	# 			{"games-won": X,
+	#			 "games-lost": X,
+	#			 "games-draw": X,
+	#			 "ranking-score":X}
+	stats = models.JSONField(default=dict, blank=True)
+
+	def __str__(self):
+		return self.user.username
