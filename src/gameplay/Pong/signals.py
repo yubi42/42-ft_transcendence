@@ -4,4 +4,4 @@ game_update_signal = Signal()
 
 game_init_signal = Signal()
 
-player_left_signal = Signal()
+game_end_signal = Signal()
