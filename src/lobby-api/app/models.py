@@ -11,6 +11,14 @@ class Lobby(models.Model):
         default=0, 
         help_text="The number of players currently in the lobby. Maximum is 2."
     )
+    max_player_count = models.PositiveIntegerField(
+        default=2, 
+        help_text="The number of players currently in the lobby. Maximum is 2."
+    )
+    max_score = models.PositiveIntegerField(
+        default=3, 
+        help_text="The max score of a game session."
+    )
     p1 = models.CharField(
         default=None,
         max_length=100, 

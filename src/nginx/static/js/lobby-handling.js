@@ -26,8 +26,32 @@ function selectPlayer(role, name, db_value) {
     const randomNumber = Math.floor(1000 + Math.random() * 9000); // Generates a random 4-digit number
     return `guest${randomNumber}`;
   }
+
+export function joinLocalLobby(lobby_id, lobby_name, max_score)
+{
+  document.querySelectorAll('.online').forEach(content => 
+    {
+      content.classList.remove('active');
+    }
+  );
+  document.getElementById('lobby').classList.add('active')
+  document.getElementById('lobby-header').textContent = `Lobby: ${lobby_name}`;
+  const p1 = document.getElementById('p1');
+  const p2 = document.getElementById('p2');
+  p1.style.display = 'none';
+  p2.style.display = 'none';
+  const start_button = document.getElementById('start_game');
+  if (start_button) {
+    start_button.replaceWith(start_button.cloneNode(true));
+    const new_start_button = document.getElementById('start_game');
+    new_start_button.classList.add('start_enabled');
+    new_start_button.addEventListener('click', () => {
+      startGame(lobby_id, '', 1, '', max_score);
+    });
+  }
+}
   
-export function joinLobby(lobby_id, lobby_name)
+export function joinLobby(lobby_id, lobby_name, max_score)
   {
     lobbyFull(lobby_id).then(is_full => {
       if (is_full) {
@@ -66,7 +90,7 @@ export function joinLobby(lobby_id, lobby_name)
         if (data.type === 'start_game')
         {
             console.log('Game starting...');
-            startGame(lobby_id, roles.p1 == name ? 'p1' : 'p2', 2, roles);
+            startGame(lobby_id, roles.p1 == name ? 'p1' : 'p2', 2, roles, max_score);
         } 
         else if (data.type === 'enable_start_button')
         {
@@ -106,8 +130,12 @@ export function joinLobby(lobby_id, lobby_name)
   
   function enableStartButton() {
     const start_button = document.getElementById('start_game');
-    start_button.classList.add('start_enabled');
-    start_button.addEventListener('click', () => sendStartGame())
+    if (start_button) {
+      start_button.replaceWith(start_button.cloneNode(true));
+      const new_start_button = document.getElementById('start_game');
+      new_start_button.classList.add('start_enabled');
+      new_start_button.addEventListener('click', () => sendStartGame())
+    }
   }
   
   function disableStartButton() {

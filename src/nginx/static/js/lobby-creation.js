@@ -1,5 +1,5 @@
 import { getCSRFToken } from './auth.js';
-import { joinLobby } from './lobby-handling.js';
+import { joinLobby, joinLocalLobby } from './lobby-handling.js';
 
 document.getElementById('prepare-lobby').addEventListener('click', prepareLobby);
 
@@ -37,8 +37,10 @@ function createLobby(event)
       console.log('Raw response:', response);
       if(response.error)
         console.log('Error: ' + response.error);
+      else if(response.max_player_count == 1)
+        joinLocalLobby(response.lobby, response.lobby_name, response.max_score)
       else 
-        joinLobby(response.lobby, response.lobby_name);
+        joinLobby(response.lobby, response.lobby_name, response.max_score);
     })
     .catch(error => {
       console.log('Fetch error: ' + error);
@@ -81,16 +83,17 @@ function listLobbies()
   fetch('/lobby/all/')
     .then(response => response.json())
     .then(lobbies => {
+      const filteredLobbies = lobbies.filter(lobby => lobby.max_player_count === 2);
       lobbyList.innerHTML = '';
-      lobbies.forEach(lobby => {
+      filteredLobbies.forEach(lobby => {
         let lobbyDiv = document.createElement('div');
         lobbyDiv.classList.add('lobby-item');
         lobbyDiv.innerHTML = `
-        <p>${lobby.current_player_count} / 2</p>
+        <p>${lobby.current_player_count} / ${lobby.max_player_count}</p>
         <h3>${lobby.name}</h3>
         ${lobby.password ? '<img src="/svg/lock.svg" alt="password required">' : '<img src="/svg/lock-open.svg" alt="no password required">'}
       `;
-      lobbyDiv.onclick = () => joinLobby(lobby.id, lobby.name);
+      lobbyDiv.onclick = () => joinLobby(lobby.id, lobby.name, lobby.max_score);
       lobbyList.appendChild(lobbyDiv);
       });
     })

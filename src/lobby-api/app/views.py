@@ -10,6 +10,11 @@ logger = logging.getLogger(__name__)
 def create_lobby(request):
     if request.method == 'POST':
         name = request.POST.get('lobby_name')
+        score = request.POST.get('score')
+        mode = int(request.POST.get('mode'))
+        cur_player = 0
+        if (mode == 1):
+            cur_player = 1
         raw_password = request.POST.get('lobby_password', '')
         print("name: " + name)
         auth_response = requests.get(
@@ -25,13 +30,13 @@ def create_lobby(request):
             return JsonResponse({'error': 'Unauthorized user'}, status=401)
         
         try:
-            lobby = Lobby(name=name)
+            lobby = Lobby(name=name, max_score=score, max_player_count=mode, current_player_count=cur_player)
             if raw_password:
                 lobby.set_password(raw_password)
             lobby.save()
 
             return JsonResponse(
-                {'message': 'Lobby created successfully!', 'lobby': lobby.id, 'lobby_name': lobby.name}, 
+                {'message': 'Lobby created successfully!', 'lobby': lobby.id, 'lobby_name': lobby.name, 'max_score': lobby.max_score, 'max_player_count': lobby.max_player_count}, 
                 status=201
             )        
         except IntegrityError:
@@ -54,9 +59,11 @@ def get_lobby(request, lobby_id):
                 'id': lobby.id,
                 'name': lobby.name,
                 'current_player_count': lobby.current_player_count,
+                'max_player_count': lobby.max_player_count,
                 'p1': lobby.p1,
                 'p2': lobby.p2,
-                'password_protected': bool(lobby.password), 
+                'password_protected': bool(lobby.password),
+                'max_score': lobby.max_score,
             }
             return JsonResponse({'message': 'Lobby retrieved successfully', 'lobby': lobby_data}, status=200)
         except Lobby.DoesNotExist:
@@ -76,9 +83,11 @@ def all(request):
                 'id': lobby.id,
                 'name': lobby.name,
                 'current_player_count': lobby.current_player_count,
+                'max_player_count': lobby.max_player_count,
                 'p1': lobby.p1,
                 'p2': lobby.p2,
                 'password_protected': bool(lobby.password), 
+                'max_score': lobby.max_score,
             })
         return JsonResponse(lobby_list, safe=False)
     
