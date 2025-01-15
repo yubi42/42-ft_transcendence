@@ -52,10 +52,40 @@
           </div>
           <div class="online" id="lobby-list"><p>test</p></div>
           <form class="online" id="lobby-form">
-            <h2>New Lobby:</h2>
+            <h2>Create a Lobby:</h2>
             <div>
               <label for="lobby-name">Lobby Name:</label>
               <input type="text" id="lobby-name" name="lobby_name" required>
+            </div>
+            <div>
+              <label for="mode-options"></label>
+              <div id="mode-options">
+                <label class="score-option">
+                  <input type="radio" name="mode" value="1" checked>
+                  <span>local</span>
+                </label>
+                <label class="score-option">
+                  <input type="radio" name="mode" value="2" checked>
+                  <span>online</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label for="score-options">Score:</label>
+              <div id="score-options">
+                <label class="score-option">
+                  <input type="radio" name="score" value="3" checked>
+                  <span>3</span>
+                </label>
+                <label class="score-option">
+                  <input type="radio" name="score" value="5">
+                  <span>5</span>
+                </label>
+                <label class="score-option">
+                  <input type="radio" name="score" value="10">
+                  <span>10</span>
+                </label>
+              </div>
             </div>
             <div>
               <label for="lobby-password">password:</label>
@@ -71,7 +101,14 @@
             </div>
             <button class="start_button" id="start_game">Start Game</button>
           </div>
-          <div class="online" id="game"><p id="score">Left: 0 | Right: 0</p><canvas id="game-canvas"></canvas></div>
+          <div class="online" id="game">
+            <p id="score">Left: 0 | Right: 0</p>
+            <div id="draw-type">
+              <p id="3d">3d</p>
+              <p id="2d" class="active">2d</p>
+            </div>
+            <canvas id="game-canvas"></canvas>
+          </div>
         </div>
         <div class="game-selector" id="tournament">
           <p>Tournament Mode</p>

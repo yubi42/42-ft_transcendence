@@ -1,5 +1,5 @@
 ifneq ($(shell command -v docker compose 2>/dev/null),)
-DOCKER_COMPOSE = docker-compose
+DOCKER_COMPOSE = docker compose
 else ifneq ($(shell command -v docker-compose 2>/dev/null),)
 DOCKER_COMPOSE = docker-compose
 else

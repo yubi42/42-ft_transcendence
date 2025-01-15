@@ -1,13 +1,15 @@
 import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./sockets.js";
 
-export function startGame(lobby_id, player, player_count, roles)
+export function startGame(lobby_id, player, player_count, roles, max_score)
 {
     let gameSettings = {
         scoreBoard : document.getElementById('score'),
         canvas : document.getElementById('game-canvas'),
+        contextType : '2d',
         paddle_width : 0,
         paddle_height : 0,
-        ball_size : 0
+        ball_size : 0,
+        player : player
     }
 
     document.querySelectorAll('.online').forEach(content => 
@@ -17,7 +19,28 @@ export function startGame(lobby_id, player, player_count, roles)
       );
     document.getElementById('game').classList.add('active');
 
-    initGameplaySocket(`/ws/gameplay/${player_count}/${lobby_id}/`)
+    const twoD = document.getElementById('2d');
+    const threeD = document.getElementById('3d');
+
+    twoD.addEventListener('click', 
+      () => {
+      gameSettings.contextType = '2d';
+      threeD.classList.remove('active');
+      twoD.classList.add('active');
+      console.log('2d selected');
+      console.log(gameSettings);
+    });
+
+    threeD.addEventListener('click', 
+      () => {
+      gameSettings.contextType = '3d';
+      twoD.classList.remove('active');
+      threeD.classList.add('active');
+      console.log('3d selected');
+      console.log(gameSettings);
+    });
+
+    initGameplaySocket(`/ws/gameplay/${max_score}/${player_count}/${lobby_id}/`)
       
     const encodeState = (player, direction, moving) => {
       const playerBit = (player == 'p1' ? 0 : 1);
@@ -57,7 +80,7 @@ export function startGame(lobby_id, player, player_count, roles)
     gameplay_socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type == 'game_update')
-        drawGame(data, gameSettings.canvas, gameSettings.paddle_width, gameSettings.paddle_height, gameSettings.ball_size, gameSettings.scoreBoard, roles);
+        drawGame(data, gameSettings, roles, '2d');
       else if(data.type == 'game_init')
         initGameSettings(data, gameSettings);
       else if(data.type == 'player_left') {
@@ -70,6 +93,17 @@ export function startGame(lobby_id, player, player_count, roles)
         );
         document.getElementById('lobby').classList.add('active');
         alert("Player disconnected - returning to lobby.");
+      }
+      else if(data.type == 'game_end') {
+        console.log("game ending...");
+        closeGameplaySocket();
+        document.querySelectorAll('.online').forEach(content => 
+          {
+            content.classList.remove('active');
+          }
+        );
+        alert(data.message);
+        document.getElementById('lobby').classList.add('active');
       }
     };
 
@@ -108,30 +142,65 @@ function normalize(value, max, canvasSize)
    return((value / max) * canvasSize);
 }
 
-function drawGame(data, canvas, paddle_width, paddle_height, ball_size, scoreBoard, roles)
+function drawGame(data, gameSettings, roles)
 {
-    const context = canvas.getContext('2d');
-    const maxX = 1000;
-    const maxY = 500;
+  const maxX = 1000;
+  const maxY = 500;
 
-    // const nonce = parseInt(data.nonce);
-    const paddleL = normalize(parseInt(data.paddleL), maxY, canvas.height);
-    const paddleR = normalize(parseInt(data.paddleR), maxY, canvas.height);
-    const ballX = normalize(parseInt(data.ball_x), maxX, canvas.width);
-    const ballY = normalize(parseInt(data.ball_y), maxY, canvas.height);
+  // const nonce = parseInt(data.nonce);
+  const paddleL = normalize(parseInt(data.paddleL), maxY, gameSettings.canvas.height);
+  const paddleR = normalize(parseInt(data.paddleR), maxY, gameSettings.canvas.height);
+  const ballX = normalize(parseInt(data.ball_x), maxX, gameSettings.canvas.width);
+  const ballY = normalize(parseInt(data.ball_y), maxY, gameSettings.canvas.height);
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = 'white';
+// right now i was thinking to toggle the drawing mode from 2d to 3d
+// but if you use three.js, we could also just switch the camera position and have it one.
 
-    // draw paddles
-    context.fillRect(0, paddleL, paddle_width, paddle_height);
-    context.fillRect(canvas.width - paddle_width, paddleR, paddle_width, paddle_height);
+//and dont wonder, i set both (if else) to drawGame2d right now, since drawGame3d is not implemented yet.
+  if (gameSettings.contextType == '2d')
+    drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY);
+  else 
+    drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY);
 
-    // draw ball
-    context.beginPath();
-    context.arc(ballX, ballY, ball_size / 2, 0, Math.PI * 2);
-    context.fill();
+  // Update score
+  if (roles)
+    gameSettings.scoreBoard.textContent = `P1 : ${roles.p1} : ${data.Lscore} | ${data.Rscore} : ${roles.p2} : P2`;
+  else
+    gameSettings.scoreBoard.textContent = `P1 : ${data.Lscore} | ${data.Rscore} : P2`;
+}
 
-    // Update score
-    scoreBoard.textContent = `P1 : ${roles.p1} : ${data.Lscore} | ${data.Rscore} : ${roles.p2} : P2`;
+function drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY)
+{
+  const context = gameSettings.canvas.getContext(gameSettings.contextType);
+  context.clearRect(0, 0, gameSettings.canvas.width, gameSettings.canvas.height);
+  context.fillStyle = 'white';
+
+  // draw paddles
+  context.fillRect(0, paddleL, gameSettings.paddle_width, gameSettings.paddle_height);
+  context.fillRect(gameSettings.canvas.width - gameSettings.paddle_width, paddleR, gameSettings.paddle_width, gameSettings.paddle_height);
+
+  // draw ball
+  context.beginPath();
+  context.arc(ballX, ballY, gameSettings.ball_size / 2, 0, Math.PI * 2);
+  context.fill();
+
+}
+
+
+function drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY)
+{
+
+/* gameSettings.scoreBoard <-- gets updated in drawGame already
+gameSettings.canvas <-- canvas element 
+gameSettings.contextType <-- updates when the player clicks on 3d or 2d to toggle mode 
+gameSettings.paddle_width 
+gameSettings.paddle_height
+gameSettings.ball_size
+gameSettings.player <- says if the player is 'p1' or 'p2' we can adjust the camera depending on it.  
+
+paddleL <- y position of paddleL (x is as left as possible) aka 0 
+paddleR <- y position of paddleR (x is as right as possible) aka gameSettings.canvas.width - gameSettings.paddle_width
+ballX
+ballY
+*/
 }

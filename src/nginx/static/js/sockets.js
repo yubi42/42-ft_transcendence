@@ -16,12 +16,14 @@ export function initGameplaySocket(url)
     if (!gameplay_socket)
         gameplay_socket = new WebSocket(url);
     else
-        console.warn("Lobby socket already initialized.");
+        console.warn("Gameplaylocket socket already initialized.");
 }
 
 export function closeGameplaySocket()
 {
+  console.log("in close gameplay socket");
   if (gameplay_socket && gameplay_socket.readyState === WebSocket.OPEN) {
+    console.log("closing socket...");
     gameplay_socket.close();
   }
   gameplay_socket = null;
