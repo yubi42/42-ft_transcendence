@@ -13,6 +13,7 @@ all:
 	@${COMPOSE_CMD} build --no-cache
 	mkdir -p /home/${USER}/data/lobby_db
 	mkdir -p /home/${USER}/data/userdata_db
+	@${COMPOSE_CMD} build --no-cache
 
 up:
 	@${COMPOSE_CMD} up || true
