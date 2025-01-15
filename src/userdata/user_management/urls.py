@@ -9,5 +9,5 @@ urlpatterns = [
     path('update-profile/', views.update_profile_view, name='update_profile'),
     path('upload-avatar/', views.upload_avatar, name='upload_avatar'),
     path('add-friend/', views.add_friend_view, name='add_friend'),
-	path('stats/', views.stats_view, name='stats')
+	# path('stats/', views.stats_view, name='stats')
 ]
