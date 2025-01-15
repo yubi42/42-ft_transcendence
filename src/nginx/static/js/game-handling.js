@@ -1,6 +1,6 @@
 import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./sockets.js";
 
-export function startGame(lobby_id, player, player_count, roles)
+export function startGame(lobby_id, player, player_count, roles, max_score)
 {
     let gameSettings = {
         scoreBoard : document.getElementById('score'),
@@ -40,7 +40,7 @@ export function startGame(lobby_id, player, player_count, roles)
       console.log(gameSettings);
     });
 
-    initGameplaySocket(`/ws/gameplay/${player_count}/${lobby_id}/`)
+    initGameplaySocket(`/ws/gameplay/${max_score}/${player_count}/${lobby_id}/`)
       
     const encodeState = (player, direction, moving) => {
       const playerBit = (player == 'p1' ? 0 : 1);
@@ -93,6 +93,17 @@ export function startGame(lobby_id, player, player_count, roles)
         );
         document.getElementById('lobby').classList.add('active');
         alert("Player disconnected - returning to lobby.");
+      }
+      else if(data.type == 'game_end') {
+        console.log("game ending...");
+        closeGameplaySocket();
+        document.querySelectorAll('.online').forEach(content => 
+          {
+            content.classList.remove('active');
+          }
+        );
+        alert(data.message);
+        document.getElementById('lobby').classList.add('active');
       }
     };
 
@@ -152,7 +163,10 @@ function drawGame(data, gameSettings, roles)
     drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY);
 
   // Update score
-  gameSettings.scoreBoard.textContent = `P1 : ${roles.p1} : ${data.Lscore} | ${data.Rscore} : ${roles.p2} : P2`;
+  if (roles)
+    gameSettings.scoreBoard.textContent = `P1 : ${roles.p1} : ${data.Lscore} | ${data.Rscore} : ${roles.p2} : P2`;
+  else
+    gameSettings.scoreBoard.textContent = `P1 : ${data.Lscore} | ${data.Rscore} : P2`;
 }
 
 function drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY)
