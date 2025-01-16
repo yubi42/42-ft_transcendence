@@ -34,7 +34,7 @@ export function startPacPong(lobby_id, player, player_count, roles, max_score)
       const playerBit = (player == 'p1' ? 0 : 1); // like before
       const directionBit = (direction == 'up' || direction == 'left' ? 1 : 0); // like before but also handles left right now in combination with achsisBit
       const movingBit = (moving ? 1 : 0); // key down or key up
-      return ((pacBit << 2) | (achsisBit << 1) | (playerBit << 2) | (directionBit << 1) | movingBit);
+      return ((pacBit << 4) | (achsisBit << 3) | (playerBit << 2) | (directionBit << 1) | movingBit);
     }
 
     const handleKeyDown = (event) => {
