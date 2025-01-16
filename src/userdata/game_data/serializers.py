@@ -1,10 +1,13 @@
 from rest_framework import serializers
+import logging
 from .models import GameData
 from .utils import calculate_elo
 from user_management.models import Profile
 from django.contrib.auth.models import User
 import re
 import numpy as np
+
+logger = logging.getLogger('django')
 
 class GameDataSerializer(serializers.ModelSerializer):
 	players = serializers.ListField(
@@ -67,14 +70,15 @@ class GameDataSerializer(serializers.ModelSerializer):
 			isDraw = True
 		winnerIdcs = np.flatnonzero(scores == np.max(scores))
 		for profile_idx, profile in enumerate(profiles):
-			stats = profile.stats
-			stats['games-played'] = profile.stats.get('games-played', 0) + 1
+			profile.stats['games-played'] = profile.stats.get('games-played', 0) + 1
 			if isDraw:
-				stats['number-draws'] = profile.stats.get('number-draws', 0) + 1
+				profile.stats['games-draws'] = profile.stats.get('games-played', 0) + 1
 			elif profile_idx in winnerIdcs:
-				stats['number-wins'] = profile.stats.get('number-wins', 0) + 1
+				profile.stats['games-wins'] = profile.stats.get('games-wins', 0) + 1
 			else:
-				stats['number-losts'] = profile.stats.get('number-losts', 0) + 1
+				profile.stats['games-losses'] = profile.stats.get('games-losses', 0) + 1
+			profile.save()
+		logger.info("Created a game data object")
 		return game
 	
 	def to_representation(self, instance):

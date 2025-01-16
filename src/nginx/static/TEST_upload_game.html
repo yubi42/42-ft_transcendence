@@ -40,12 +40,21 @@
                 players: players || [],
                 score: score || null
             };
+			
+			function getCSRFToken() {
+    			return document.cookie.split('; ')
+        		.find(row => row.startsWith('csrftoken='))
+        		?.split('=')[1];
+			}
+
+			const csrfToken = getCSRFToken();
 
             // Send POST request using fetch
             fetch('http://localhost:8000/user-api/addgame/', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+					'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify(data)
             })

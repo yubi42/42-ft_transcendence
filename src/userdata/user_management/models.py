@@ -6,9 +6,9 @@ from django.utils.crypto import get_random_string
 
 def defaultStats():
 	initStats = dict()
-	initStats["games-won"] = 0
-	initStats["games-lost"] = 0
-	initStats["games-draw"] = 0
+	initStats["games-wins"] = 0
+	initStats["games-losses"] = 0
+	initStats["games-draws"] = 0
 	initStats["games-played"] = 0
 	initStats["ranking-score"] = 0
 	return initStats
