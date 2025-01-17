@@ -16,7 +16,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from game_data.serializers import GameDataSerializer
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('django')
 
 @api_view(['POST'])
 def signup_view(request):

@@ -9,7 +9,7 @@ from .serializers import GameDataSerializer
 from .models import GameData
 from rest_framework.decorators import api_view
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('django')
 
 class GameDataCreate(generics.CreateAPIView):
     # API endpoint that allows creation of a new customer

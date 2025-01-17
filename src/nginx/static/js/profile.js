@@ -35,8 +35,11 @@ function fetchProfileData() {
     .then(data => {
         document.getElementById('username').textContent = data.user.username;
         document.getElementById('display-name').textContent = data.display_name;
-        document.getElementById('wins').textContent = data.stats.wins;
-        document.getElementById('losses').textContent = data.stats.losses;
+        document.getElementById('wins').textContent = data.stats["games-wins"];
+        document.getElementById('losses').textContent = data.stats["games-losses"];
+		document.getElementById('draws').textContent = data.stats["games-draws"];
+		document.getElementById('ranking-score').textContent = data.stats["ranking-score"];
+		document.getElementById('games-played').textContent = data.stats["games-played"];
         if (data.avatar) {
             document.getElementById('avatar').src = data.avatar;
         }
