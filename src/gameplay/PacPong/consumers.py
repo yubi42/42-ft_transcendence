@@ -335,7 +335,7 @@ class PacPongGame(AsyncWebsocketConsumer):
 			distance = math.sqrt((self.game_session.ball[1] - self.game_session.pac[1])**2 + (self.game_session.ball[0] - self.game_session.pac[0])**2)
 			
 			# Check if the distance is less than the sum of the radii
-			if distance < (self.game_session.ball_size + self.game_session.pac_size):
+			if distance < (self.game_session.ball_size/2 + self.game_session.pac_size/2):
 				self.game_session.Pscore += 1
 				self.game_session.ball_speedX = self.game_session.ball_start_speedx
 				self.game_session.ball[0] = self.game_session.screen_width/2
