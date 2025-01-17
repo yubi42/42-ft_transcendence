@@ -24,7 +24,7 @@ export function startPacPong(lobby_id, player, player_count, roles, max_score) {
 	threeD.style.display = 'none';
 
 
-	initGameplaySocket(`/ws/gameplay/pacpong/${max_score}/${player_count}/${lobby_id}/`)
+	initGameplaySocket(`/ws/gameplay/PacPong/${max_score}/${player_count}/${lobby_id}/`)
 
 	const encodeState = (player, direction, moving) => {
 		const pacBit = (player == 'p3' ? 1 : 0);  // if pac is moving  1, else 0 (if 0 the achsisBit can be skipped...)
