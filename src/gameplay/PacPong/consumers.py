@@ -28,8 +28,7 @@ class GameSession():
 
 		# locks
 		self.player_count_lock = threading.Lock()
-		self.paddle_input_lock = threading.Lock()
-		self.PAC_input_lock = threading.Lock()
+		self.player_input_lock = threading.Lock()
 
 		self.player_count = 0
 		self.paddle_input = [[0,0],[0,0]]
@@ -69,7 +68,7 @@ class GameSession():
 		self.nonce = 0
 		self.iterationStartT = 0
 
-class PongGame(AsyncWebsocketConsumer):
+class PacPongGame(AsyncWebsocketConsumer):
 
 	GameSessions = {}
 
@@ -107,7 +106,7 @@ class PongGame(AsyncWebsocketConsumer):
 			game_init_signal.connect(self.game_init_signal_handler, sender=self)
 			game_end_signal.connect(self.game_end_signal_handler, sender=self)
 			self.game_session.streaming = True
-			self.gameThread = threading.Thread(target= self.pong)
+			self.gameThread = threading.Thread(target= self.pac_pong)
 			self.gameThread.daemon = True
 			self.gameThread.start()
 
@@ -138,14 +137,14 @@ class PongGame(AsyncWebsocketConsumer):
 
 	def update_player_input(self, is_pac, achsis, player, direction, moving):
 		if is_pac == 0:
-			with self.game_session.PAC_input_lock:
+			with self.game_session.player_input_lock:
 				self.game_session.paddle_input[player][direction] = moving
 		else:
-			with self.game_session.PAC_input_lock:
+			with self.game_session.player_input_lock:
 				self.game_session.PAC_input[achsis][direction] = moving
 
 	def update_paddle_input(self, player, direction, moving):
-		with self.game_session.paddle_input_lock:
+		with self.game_session.player_input_lock:
 			self.game_session.paddle_input[player][direction] = moving
 
 	################## DISCONNECT ##################
@@ -280,138 +279,6 @@ class PongGame(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps(event))
 
 	################## THREAD ##################
-
-	################### PONG ###################
-
-	def pong(self):
-
-		game_init_signal.send(sender=self, 
-			screen_width=str(WIDTH),
-			screen_height=str(HEIGHT),
-			paddle_width=str(PADDLE_WIDTH),
-			paddle_heigth=str(PADDLE_HEIGHT),
-			ball_size=str(BALL_SIZE))
-		
-		tickrate = 1/120
-		self.game_session.start = int(time.time() * 1000)
-		self.game_session.nonce = int(time.time() * 1000) - self.game_session.start
-		self.game_session.iterationStartT = time.time()
-
-		while True:
-			with self.game_session.player_count_lock:
-				if self.game_session.player_count != self.max_player_count:
-					break
-			#gameclock logic
-			duration = time.time() - self.game_session.iterationStartT
-			sleeptime = tickrate - duration
-			if sleeptime > 0:
-				time.sleep(sleeptime)
-			self.game_session.iterationStartT = time.time()
-
-			#increase ball speed in x direction every two passes
-			if self.game_session.passes > 0 and self.game_session.passes % 2 == 0:
-				self.game_session.ball_speedX += 1
-				self.game_session.passes = 0
-
-			#check for events from fontend
-			with self.game_session.paddle_input_lock:
-				self.game_session.paddleL_speed = (self.game_session.paddle_input[0][0] - self.game_session.paddle_input[0][1]) * self.game_session.paddle_speed
-				self.game_session.paddleR_speed = (self.game_session.paddle_input[1][0] - self.game_session.paddle_input[1][1]) * self.game_session.paddle_speed
-
-			#move ball
-			self.game_session.ball[0] += self.game_session.ball_speedX
-			self.game_session.ball[1] += self.game_session.ball_speedY
-
-			#make sure data stays inside playing field
-			if self.game_session.ball[1] < 0:
-				self.game_session.ball[1] = 0
-
-			if self.game_session.ball[1] > self.game_session.screen_height:
-				self.game_session.ball[1] = self.game_session.screen_height
-
-			#move left paddle
-			self.game_session.paddleL += self.game_session.paddleL_speed
-
-			#safety against moving and being out of bounds
-			if self.game_session.paddleL >= self.game_session.screen_height - self.game_session.paddle_heigth or self.game_session.paddleL <= 0:
-				self.game_session.paddleL_speed = 0
-			if self.game_session.paddleL > self.game_session.screen_height - self.game_session.paddle_heigth:
-				self.game_session.paddleL = self.game_session.screen_height - self.game_session.paddle_heigth
-			if self.game_session.paddleL < 0:
-				self.game_session.paddleL = 0
-
-			#move right paddle
-			self.game_session.paddleR += self.game_session.paddleR_speed
-
-			#safety against moving and being out of bounds
-			if self.game_session.paddleR >= self.game_session.screen_height - self.game_session.paddle_heigth or self.game_session.paddleR <= 0:
-				self.game_session.paddleR_speed = 0
-			if self.game_session.paddleR > self.game_session.screen_height - self.game_session.paddle_heigth:
-				self.game_session.paddleR = self.game_session.screen_height - self.game_session.paddle_heigth
-			if self.game_session.paddleR < 0:
-				self.game_session.paddleR = 0
-
-			#make ball bounce on paddles
-			#Left Paddle
-			if(self.game_session.ball[0] < 0 + self.game_session.paddle_width and (self.game_session.ball[1] >= self.game_session.paddleL - self.game_session.ball_size and self.game_session.ball[1] <= self.game_session.paddleL + self.game_session.paddle_heigth)):
-				self.game_session.ball[0] = 0 + self.game_session.paddle_width
-				self.game_session.passes += 1
-				if self.game_session.paddleL_speed > 0:
-					self.game_session.ball_speedY += self.game_session.ball_bounce_mult
-				if self.game_session.paddleL_speed < 0:
-					self.game_session.ball_speedY -= self.game_session.ball_bounce_mult
-				self.game_session.ball_speedX *= -1
-			#Right Paddle 
-			if(self.game_session.ball[0] > self.game_session.screen_width - self.game_session.paddle_width - self.game_session.ball_size and (self.game_session.ball[1] + self.game_session.ball_size >= self.game_session.paddleR and self.game_session.ball[1] <= self.game_session.paddleR + self.game_session.paddle_heigth)):
-				self.game_session.ball[0] = self.game_session.screen_width - self.game_session.paddle_width - self.game_session.ball_size
-				self.game_session.passes += 1
-				if self.game_session.paddleR_speed > 0:
-					self.game_session.ball_speedY += self.game_session.ball_bounce_mult
-				if self.game_session.paddleR_speed < 0:
-					self.game_session.ball_speedY -= self.game_session.ball_bounce_mult
-				self.game_session.ball_speedX *= -1
-
-			#make ball bounce on top and bottom
-			if self.game_session.ball[1] <= 0 or self.game_session.ball[1] >= self.game_session.screen_height - self.game_session.ball_size:
-				self.game_session.ball_speedY *= -1
-
-			#make ball reset if i leaves screen on x axis
-			if self.game_session.ball[0] > self.game_session.screen_width - self.game_session.ball_size:
-				self.game_session.Lscore += 1
-				self.game_session.ball_speedX = self.game_session.ball_start_speedx
-				self.game_session.ball[0] = self.game_session.screen_width/2
-				self.game_session.ball[1] = self.game_session.screen_height/2
-				self.game_session.ball_speedY = self.game_session.ball_start_speedy
-			if (self.game_session.ball[0] < 0):
-				self.game_session.Rscore += 1
-				self.game_session.ball_speedX = - self.game_session.ball_start_speedx
-				self.game_session.ball[0] = self.game_session.screen_width/2
-				self.game_session.ball[1] = self.game_session.screen_height/2
-				self.game_session.ball_speedY = self.game_session.ball_start_speedy
-
-			#update nonce
-			self.game_session.nonce = int(time.time() * 1000) - self.game_session.start
-
-			game_update_signal.send(sender=self, 
-						   nonce=self.game_session.nonce, 
-						   paddleL=self.game_session.paddleL, 
-						   paddleR=self.game_session.paddleR, 
-						   ball_x=self.game_session.ball[0], 
-						   ball_y=self.game_session.ball[1], 
-						   Lscore=self.game_session.Lscore, 
-						   Rscore=self.game_session.Rscore)
-			
-			if self.game_session.Lscore >= self.max_score or self.game_session.Rscore >= self.max_score:
-				if self.max_player_count == 1:
-					self.game_session.streaming = False
-				self.game_session.end = True
-				game_end_signal.send(sender=self,
-						 Lscore=self.game_session.Lscore,
-						 Rscore=self.game_session.Rscore)
-				break
-		
-
-	################## PAC_PONG ##################
 
 	def pac_pong(self):
 
