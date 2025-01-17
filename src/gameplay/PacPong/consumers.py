@@ -1,6 +1,6 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .signals import game_update_signal, game_init_signal, game_end_signal
-import asyncio, time, threading, json, httpx
+import asyncio, time, threading, json, math
 # import logging
 
 # from multiprocessing.shared_memory import SharedMemory
@@ -32,7 +32,7 @@ class GameSession():
 
 		self.player_count = 0
 		self.paddle_input = [[0,0],[0,0]]
-		self.PAC_input = [[0,0],[0,0]]
+		self.pac_input = [[0,0],[0,0]]
 		# [is pac, lr or ud, player 1|2,up|down,moves]
 
 		# size
@@ -41,18 +41,18 @@ class GameSession():
 		self.paddle_width = MAX * PADDLE_WIDTH
 		self.paddle_heigth = MAX * PADDLE_HEIGHT
 		self.ball_size = MAX * BALL_SIZE
-		self.PAC_size = MAX * PAC_SIZE
+		self.pac_size = MAX * PAC_SIZE
 
 		# position
 		self.ball = [0,0]
 		self.paddleL = 0
 		self.paddleR = 0
-		self.PAC = [0,MAX]
+		self.pac = [MAX/2,50]
 
-		self.PAC_speed = 0
-		self.PAC_speedX = 0
-		self.PAC_speedy = 0
-		self.PAC_start_speed = 4
+		self.pac_speed = 0
+		self.pac_speedX = 0
+		self.pac_speedy = 0
+		self.pac_start_speed = 1
 		self.ball_start_speedx = 2
 		self.ball_start_speedy = 2
 		self.ball_speedX = self.ball_start_speedx
@@ -64,6 +64,7 @@ class GameSession():
 		self.paddleR_speed = 0
 		self.Lscore = 0
 		self.Rscore = 0
+		self.Pscore = 0
 		self.start = 0
 		self.nonce = 0
 		self.iterationStartT = 0
@@ -114,19 +115,8 @@ class PacPongGame(AsyncWebsocketConsumer):
 
 		
 	################## RECEIVE ##################
-
-
-
-	async def receive_pong(self, text_data):
-		encoded_data = int(text_data)
-		player = (encoded_data >> 2) & 1
-		direction = (encoded_data >> 1) & 1
-		moving = encoded_data & 1
-		await asyncio.to_thread(self.update_paddle_input, player, direction, moving)
-
-	# [is pac, lr or ud, player 1|2,up|down,moves]
 	
-	async def receive_PAC_pong(self, text_data):
+	async def receive(self, text_data):
 		encoded_data = int(text_data)
 		is_pac = (encoded_data >> 4) & 1
 		achsis = (encoded_data >> 3) & 1
@@ -134,6 +124,7 @@ class PacPongGame(AsyncWebsocketConsumer):
 		direction = (encoded_data >> 1) & 1
 		moving = encoded_data & 1
 		await asyncio.to_thread(self.update_player_input, is_pac, achsis, player, direction, moving)
+	# [is pac, lr or ud, player 1|2,up|down,moves]
 
 	def update_player_input(self, is_pac, achsis, player, direction, moving):
 		if is_pac == 0:
@@ -141,11 +132,7 @@ class PacPongGame(AsyncWebsocketConsumer):
 				self.game_session.paddle_input[player][direction] = moving
 		else:
 			with self.game_session.player_input_lock:
-				self.game_session.PAC_input[achsis][direction] = moving
-
-	def update_paddle_input(self, player, direction, moving):
-		with self.game_session.player_input_lock:
-			self.game_session.paddle_input[player][direction] = moving
+				self.game_session.pac_input[achsis][direction] = moving
 
 	################## DISCONNECT ##################
 
@@ -209,14 +196,17 @@ class PacPongGame(AsyncWebsocketConsumer):
 
 		kwargs.pop('sender', None)
 		game_state = {
-        	'type': 'game_update',
-        	'nonce': kwargs['nonce'],
-        	'paddleL': kwargs['paddleL'],
-        	'paddleR': kwargs['paddleR'],
-        	'ball_x': kwargs['ball_x'],
-        	'ball_y': kwargs['ball_y'],
-        	'Lscore': kwargs['Lscore'],
-        	'Rscore': kwargs['Rscore'],
+			'type': 'game_update',
+			'nonce': kwargs['nonce'],
+			'paddleL': kwargs['paddleL'],
+			'paddleR': kwargs['paddleR'],
+			'ball_x': kwargs['ball_x'],
+			'ball_y': kwargs['ball_y'],
+			'Lscore': kwargs['Lscore'],
+			'Rscore': kwargs['Rscore'],
+			'Pscore': kwargs['Pscore'],
+			'pac_x': kwargs['pac_x'],
+			'pac_y': kwargs['pac_y'],
     	}
 		if self.max_player_count > 1:
 			await self.channel_layer.group_send(
@@ -240,7 +230,7 @@ class PacPongGame(AsyncWebsocketConsumer):
         	'paddle_width': kwargs['paddle_width'],
         	'paddle_heigth': kwargs['paddle_heigth'],
         	'ball_size': kwargs['ball_size'],
-			#'pac_size': kwargs['pac_size'],
+			'pac_size': kwargs['pac_size'],
 			}
 		
 		if self.max_player_count > 1:
@@ -257,10 +247,12 @@ class PacPongGame(AsyncWebsocketConsumer):
 	async def game_end_signal_handler(self, **kwargs):
 
 		message = "You tied."
-		if int(kwargs['Lscore']) > int(kwargs['Rscore']):
+		if int(kwargs['Lscore']) > int(kwargs['Rscore'] and kwargs['Lscore']) > int(kwargs['Pscore']):
 			message = "P1 won!"
-		elif int(kwargs['Lscore']) < int(kwargs['Rscore']):
+		elif int(kwargs['Lscore']) < int(kwargs['Rscore'] and kwargs['Rscore']) > int(kwargs['Pscore']):
 			message = "P2 won!"
+		elif int(kwargs['Pscore']) < int(kwargs['Lscore'] and kwargs['Pscore']) > int(kwargs['Rscore']):
+			message = "PAC won!"
 
 		game_state = {
         	'type': 'game_end',
@@ -316,29 +308,47 @@ class PacPongGame(AsyncWebsocketConsumer):
 			with self.game_session.player_input_lock:
 				self.game_session.paddleL_speed = (self.game_session.paddle_input[0][0] - self.game_session.paddle_input[0][1]) * self.game_session.paddle_speed
 				self.game_session.paddleR_speed = (self.game_session.paddle_input[1][0] - self.game_session.paddle_input[1][1]) * self.game_session.paddle_speed
-			#PAC
-				self.game_session.PAC_speedx = (self.game_session.PAC_input[0][0] - self.game_session.PAC_input[0][1]) * self.game_session.PAC_speed
-				self.game_session.PAC_speedy = (self.game_session.PAC_input[1][0] - self.game_session.PAC_input[1][1]) * self.game_session.PAC_speed
+			#pac
+				self.game_session.pac_speed = self.game_session.pac_start_speed
+				self.game_session.pac_speedx = (self.game_session.pac_input[1][0] - self.game_session.pac_input[1][1]) * self.game_session.pac_speed
+				self.game_session.pac_speedy = (self.game_session.pac_input[0][0] - self.game_session.pac_input[0][1]) * self.game_session.pac_speed
 
-			#safety against PAC moving and being out of bounds
-			if self.game_session.PAC[1] >= self.game_session.screen_height or self.game_session.paddleL <= 0:
-				self.game_session.PAC_speedy = 0
+			#move pac
+			self.game_session.pac[0] += self.game_session.pac_speedx
+			self.game_session.pac[1] += self.game_session.pac_speedy
 
-			if self.game_session.PAC[1] < 0:
-				self.game_session.PAC[1] = 0
+			#safety against pac moving and being out of bounds
+			if self.game_session.pac[1] < 0 + self.game_session.pac_size/2:
+				self.game_session.pac[1] = 0 + self.game_session.pac_size/2
 			
-			if self.game_session.PAC[1] > self.game_session.screen_height:
-				self.game_session.PAC[1] = self.game_session.screen_height
-
-			#move PAC
-			self.game_session.PAC[0] += self.game_session.PAC_speedx
-			self.game_session.PAC[1] += self.game_session.PAC_speedy
+			if self.game_session.pac[1] > self.game_session.screen_height - self.game_session.pac_size/2:
+				self.game_session.pac[1] = self.game_session.screen_height - self.game_session.pac_size/2
 			
+			if self.game_session.pac[0] < 0 + self.game_session.pac_size/2:
+				self.game_session.pac[0] = 0 + self.game_session.pac_size/2
+			
+			if self.game_session.pac[0] > self.game_session.screen_width - self.game_session.pac_size/2:
+				self.game_session.pac[0] = self.game_session.screen_width - self.game_session.pac_size/2
+
+			#make pac collide with the ball
+			# Calculate the distance between the centers of the two balls
+			distance = math.sqrt((self.game_session.ball[1] - self.game_session.pac[1])**2 + (self.game_session.ball[0] - self.game_session.pac[0])**2)
+			
+			# Check if the distance is less than the sum of the radii
+			if distance < (self.game_session.ball_size + self.game_session.pac_size):
+				self.game_session.Pscore += 1
+				self.game_session.ball_speedX = self.game_session.ball_start_speedx
+				self.game_session.ball[0] = self.game_session.screen_width/2
+				self.game_session.ball[1] = self.game_session.screen_height/2
+				self.game_session.pac[0] = self.game_session.screen_width/2
+				self.game_session.pac[1] = 50
+				self.game_session.ball_speedY = self.game_session.ball_start_speedy
+
 			#move ball
 			self.game_session.ball[0] += self.game_session.ball_speedX
 			self.game_session.ball[1] += self.game_session.ball_speedY
 
-			#make sure data stays inside playing field
+			#make sure ball stays inside playing field
 			if self.game_session.ball[1] < 0:
 				self.game_session.ball[1] = 0
 
@@ -397,12 +407,16 @@ class PacPongGame(AsyncWebsocketConsumer):
 				self.game_session.ball_speedX = self.game_session.ball_start_speedx
 				self.game_session.ball[0] = self.game_session.screen_width/2
 				self.game_session.ball[1] = self.game_session.screen_height/2
+				self.game_session.pac[0] = self.game_session.screen_width/2
+				self.game_session.pac[1] = 50
 				self.game_session.ball_speedY = self.game_session.ball_start_speedy
 			if (self.game_session.ball[0] < 0):
 				self.game_session.Rscore += 1
 				self.game_session.ball_speedX = - self.game_session.ball_start_speedx
 				self.game_session.ball[0] = self.game_session.screen_width/2
 				self.game_session.ball[1] = self.game_session.screen_height/2
+				self.game_session.pac[0] = self.game_session.screen_width/2
+				self.game_session.pac[1] = 50
 				self.game_session.ball_speedY = self.game_session.ball_start_speedy
 
 			#update nonce
@@ -415,14 +429,18 @@ class PacPongGame(AsyncWebsocketConsumer):
 						   ball_x=self.game_session.ball[0], 
 						   ball_y=self.game_session.ball[1], 
 						   Lscore=self.game_session.Lscore, 
-						   Rscore=self.game_session.Rscore)
+						   Rscore=self.game_session.Rscore,
+						   Pscore=self.game_session.Pscore,
+						   pac_x=self.game_session.pac[0],
+						   pac_y=self.game_session.pac[1])
 			
-			if self.game_session.Lscore >= self.max_score or self.game_session.Rscore >= self.max_score:
+			if self.game_session.Lscore >= self.max_score or self.game_session.Rscore >= self.max_score or self.game_session.Pscore >= self.max_score:
 				if self.max_player_count == 1:
 					self.game_session.streaming = False
 				self.game_session.end = True
 				game_end_signal.send(sender=self,
 						 Lscore=self.game_session.Lscore,
-						 Rscore=self.game_session.Rscore)
+						 Rscore=self.game_session.Rscore,
+						 Pscore=self.game_session.Pscore)
 				break
 		

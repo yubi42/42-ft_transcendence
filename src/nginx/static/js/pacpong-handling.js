@@ -81,8 +81,9 @@ export function startPacPong(lobby_id, player, player_count, roles, max_score) {
 
 	gameplay_socket.onmessage = (event) => {
 		const data = JSON.parse(event.data);
-		if (data.type == 'game_update')
+		if (data.type == 'game_update') {
 			drawGame(data, gameSettings, roles);
+		}
 		else if (data.type == 'game_init')
 			initGameSettings(data, gameSettings);
 		else if (data.type == 'player_left') {
@@ -132,7 +133,7 @@ function initGameSettings(data, gameSettings) {
 	gameSettings.paddle_height = gameSettings.canvas.width * parseFloat(data.paddle_heigth);
 	gameSettings.paddle_width = gameSettings.canvas.width * parseFloat(data.paddle_width);
 	gameSettings.ball_size = gameSettings.canvas.width * parseFloat(data.ball_size);
-	gameSettings.pac_size = gameSettings.canvas.width * parseFloat(data.ball_size);
+	gameSettings.pac_size = gameSettings.canvas.width * parseFloat(data.pac_size);
 }
 
 function normalize(value, max, canvasSize) {
@@ -148,8 +149,8 @@ function drawGame(data, gameSettings, roles) {
 	const paddleR = normalize(parseInt(data.paddleR), maxY, gameSettings.canvas.height);
 	const ballX = normalize(parseInt(data.ball_x), maxX, gameSettings.canvas.width);
 	const ballY = normalize(parseInt(data.ball_y), maxY, gameSettings.canvas.height);
-	const pacX = normalize(parseInt(data.PACx), maxX, gameSettings.canvas.width);
-	const pacY = normalize(parseInt(data.PACy), maxY, gameSettings.canvas.height);
+	const pacX = normalize(parseInt(data.pac_x), maxX, gameSettings.canvas.width);
+	const pacY = normalize(parseInt(data.pac_y), maxY, gameSettings.canvas.height);
 
 	// right now i was thinking to toggle the drawing mode from 2d to 3d
 	// but if you use three.js, we could also just switch the camera position and have it one.
@@ -180,7 +181,7 @@ function drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY, pacX, pacY) {
 
 	context.beginPath();
 	context.fillStyle = 'yellow'; // Different color for distinction
-	context.arc(pacX, pacY, gameSettings.ball_size / 2, 0, Math.PI * 2);
+	context.arc(pacX, pacY, gameSettings.pac_size / 2, 0, Math.PI * 2);
 	context.fill();
 }
 
