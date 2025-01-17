@@ -33,8 +33,8 @@ class GameSession():
 
 		self.player_count = 0
 		self.paddle_input = [[0,0],[0,0]]
-		#PAC_input [left,right,up,down,moving]
-		self.PAC_input = [0,0,0,0,0]
+		self.PAC_input = [[0,0],[0,0]]
+		# [is pac, lr or ud, player 1|2,up|down,moves]
 
 		# size
 		self.screen_width = MAX * WIDTH
@@ -116,6 +116,8 @@ class PongGame(AsyncWebsocketConsumer):
 		
 	################## RECEIVE ##################
 
+
+
 	async def receive_pong(self, text_data):
 		encoded_data = int(text_data)
 		player = (encoded_data >> 2) & 1
@@ -123,22 +125,24 @@ class PongGame(AsyncWebsocketConsumer):
 		moving = encoded_data & 1
 		await asyncio.to_thread(self.update_paddle_input, player, direction, moving)
 
+	# [is pac, lr or ud, player 1|2,up|down,moves]
+	
 	async def receive_PAC_pong(self, text_data):
 		encoded_data = int(text_data)
+		is_pac = (encoded_data >> 4) & 1
+		achsis = (encoded_data >> 3) & 1
 		player = (encoded_data >> 2) & 1
 		direction = (encoded_data >> 1) & 1
 		moving = encoded_data & 1
-		PAC_left = (encoded_data >> 3) & 1
-		PAC_right = (encoded_data >> 4) & 1
-		PAC_up = (encoded_data >> 5) & 1
-		PAC_down = (encoded_data >> 6) & 1
-		PAC_moving = (encoded_data >> 7) & 1
-		await asyncio.to_thread(self.update_PAC_input, PAC_left, PAC_right, PAC_up, PAC_down, PAC_moving)
-		await asyncio.to_thread(self.update_paddle_input, player, direction, moving)
+		await asyncio.to_thread(self.update_player_input, is_pac, achsis, player, direction, moving)
 
-	def update_PAC_input(self, PAC_left,PAC_right,PAC_up,PAC_down,PAC_moving):
-		with self.game_session.PAC_input_lock:
-			self.game_session.PAC_input[PAC_left,PAC_right,PAC_up,PAC_down] = PAC_moving
+	def update_player_input(self, is_pac, achsis, player, direction, moving):
+		if is_pac == 0:
+			with self.game_session.PAC_input_lock:
+				self.game_session.paddle_input[player][direction] = moving
+		else:
+			with self.game_session.PAC_input_lock:
+				self.game_session.PAC_input[achsis][direction] = moving
 
 	def update_paddle_input(self, player, direction, moving):
 		with self.game_session.paddle_input_lock:
@@ -442,14 +446,12 @@ class PongGame(AsyncWebsocketConsumer):
 
 			#check for events from fontend
 			#paddles
-			with self.game_session.paddle_input_lock:
+			with self.game_session.player_input_lock:
 				self.game_session.paddleL_speed = (self.game_session.paddle_input[0][0] - self.game_session.paddle_input[0][1]) * self.game_session.paddle_speed
 				self.game_session.paddleR_speed = (self.game_session.paddle_input[1][0] - self.game_session.paddle_input[1][1]) * self.game_session.paddle_speed
 			#PAC
-			with self.game_session.PAC_input_lock:
-				self.game_session.PAC_speedx = (self.game_session.PAC_input[1] - self.game_session.PAC_input[0]) * self.game_session.PAC_speed
-				self.game_session.PAC_speedy = (self.game_session.PAC_input[2] - self.game_session.PAC_input[3]) * self.game_session.PAC_speed
-			#PAC_input [left,right,up,down]
+				self.game_session.PAC_speedx = (self.game_session.PAC_input[0][0] - self.game_session.PAC_input[0][1]) * self.game_session.PAC_speed
+				self.game_session.PAC_speedy = (self.game_session.PAC_input[1][0] - self.game_session.PAC_input[1][1]) * self.game_session.PAC_speed
 
 			#safety against PAC moving and being out of bounds
 			if self.game_session.PAC[1] >= self.game_session.screen_height or self.game_session.paddleL <= 0:
