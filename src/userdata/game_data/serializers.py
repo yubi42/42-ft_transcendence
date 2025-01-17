@@ -72,7 +72,7 @@ class GameDataSerializer(serializers.ModelSerializer):
 		for profile_idx, profile in enumerate(profiles):
 			profile.stats['games-played'] = profile.stats.get('games-played', 0) + 1
 			if isDraw:
-				profile.stats['games-draws'] = profile.stats.get('games-played', 0) + 1
+				profile.stats['games-draws'] = profile.stats.get('games-draws', 0) + 1
 			elif profile_idx in winnerIdcs:
 				profile.stats['games-wins'] = profile.stats.get('games-wins', 0) + 1
 			else:
