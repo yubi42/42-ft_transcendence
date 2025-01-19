@@ -12,7 +12,6 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc
 
-# lint
 RUN pip install --upgrade pip
 COPY . /usr/src/app/.
 
@@ -65,4 +64,4 @@ USER app
 # run entrypoint.sh
 ENTRYPOINT ["/home/app/web/entrypoint.sh"]
 
-CMD ["gunicorn", "app.wsgi:application", "--bind", "0.0.0.0:8004",  "--access-logfile", "-"]
+CMD exec gunicorn app.wsgi:application --bind 0.0.0.0:${USERDATA_PORT} --access-logfile -
