@@ -109,23 +109,22 @@ async function fetchMatchHistory() {
 			row.appendChild(gameModeCell);
 
 			const opponentCell = document.createElement('td');
+			const scoreCell = document.createElement('td');
 			let gameStatusCell;
 			const username = document.getElementById('username').textContent;
 			if (game.players[0] == username){
 				opponentCell.textContent = game.players[1];
+				scoreCell.textContent = game.score[0].toString() + '-' + game.score[1].toString();
 				gameStatusCell = getGameStatus(game.score, 0);
 			} else if (game.players[1] == username) {
 				opponentCell.textContent = game.players[0];
+				scoreCell.textContent = game.score[1].toString() + '-' + game.score[0].toString();
 				gameStatusCell = getGameStatus(game.score, 1);
 			} else {
-				console.error(`Game with id ${game.id} cannot be connected to current user: USER: ${username} PLAYERS: ${game.players[0]}, ${game.players[1]}`);
+				console.error(`Game with id ${game.id} can\'t be connected to current user: ${username}. PLAYERS: ${game.players[0]}, ${game.players[1]}`);
 			}
 			row.appendChild(opponentCell);
-
-			const scoreCell = document.createElement('td');
-			scoreCell.textContent = game.score[0].toString() + '-' + game.score[1].toString();
 			row.appendChild(scoreCell);
-
 			row.appendChild(gameStatusCell);
 
 			tableBody.appendChild(row);
@@ -134,51 +133,6 @@ async function fetchMatchHistory() {
 		console.error(error.message);
 	}
 }
-
-// function fetchMatchHistory(matches) {
-// 	const paginationParams = new URLSearchParams({limit: '10'})
-// 	const tableBody = document.getElementById('match-history-body');
-//     try {
-//         const response = await fetch('/api/game-user-history/${paginationParams}',{
-//             method: 'GET',
-//             headers: {
-//                 'Content-Type': 'application/json',
-// 				'X-CSRFToken': getCSRFToken()
-//             },
-//             credentials: 'include',
-//         });
-//         if (!response.ok) {
-//             console.error('Failed to fetch match history:', response.status);
-//             return;
-//         }
-// 		const json = await response.json();
-//     }
-// 	response.data
-// 	.then(response => {
-//         if (response.ok) {
-//             return response.json();
-//         } else {
-//             throw new Error('Failed to fetch game history data');
-//         }
-//     })
-// 	.then(data => {
-//     const matchHistoryBody = data.getElementById('match-history-body');
-//     matchHistoryBody.innerHTML = '';
-//     matches.forEach(match => {
-//         const row = document.createElement('tr');
-//         row.innerHTML = `
-//             <td>${new Date(match.date).toLocaleDateString()}</td>
-//             <td>${match.opponent}</td>
-//             <td>${match.result}</td>
-//             <td>${match.score}</td>
-//         `;
-//         matchHistoryBody.appendChild(row);
-//     })
-// 	.catch(error => {
-//         console.error('Error fetching profile data:', error);
-//         alert('Error loading profile information.');
-//     });
-// }
 
 function uploadAvatar(event) {
     const file = event.target.files[0];
