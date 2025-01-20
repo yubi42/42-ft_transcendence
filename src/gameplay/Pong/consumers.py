@@ -2,6 +2,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from .signals import game_update_signal, game_init_signal, game_end_signal
 import asyncio, time, threading, json, httpx
 # import logging
+# logger = logging.getLogger(__name__)
 
 # from multiprocessing.shared_memory import SharedMemory
 # from channels.db import database_sync_to_async
@@ -14,7 +15,7 @@ PADDLE_WIDTH = 0.005
 PADDLE_HEIGHT = 0.05
 BALL_SIZE = 0.01
 
-# logger = logging.getLogger(__name__)
+
 
 class GameSession():
 	def __init__(self):
@@ -134,43 +135,41 @@ class PongGame(AsyncWebsocketConsumer):
 		await asyncio.to_thread(self.decrease_player_count)
 		if self.game_session.streaming == False:
 			# logger.debug("Deleting lobby....")
-			""" game_mode = 'single-player'
 			if self.max_player_count == 2:
 				game_mode = 'multi-player'
-			url = f"http://nginx:80/lobby/players/{self.lobby_id}"
-			async with httpx.AsyncClient() as client:
-				response = await client.get(url)
-			if response.status_code != 200:
-				print(f"Failed to get players.")
-				return
-			roles = response.json()
-			url = f"http://nginx:80/user-api/addgame/"
-			async with httpx.AsyncClient() as client:
-				response = await client.post(url, data=
-								{'gameMode': game_mode,
-			   					'players':[roles.p1, roles.p2],
-								'score': [self.Lscore, self.Rscore],
-			   					})
+				url = f"http://nginx:80/lobby/players/{self.lobby_id}"
+				async with httpx.AsyncClient() as client:
+					response = await client.get(url)
+				if response.status_code != 200:
+					print(f"Failed to get players.")
+					return
+				roles = response.json()
+				url = f"http://nginx:80/user-api/addgame/"
+				async with httpx.AsyncClient() as client:
+					response = await client.post(url, data=
+									{'gameMode': game_mode,
+				   					'players':[roles.p1, roles.p2],
+									'score': [self.Lscore, self.Rscore],
+				   					})
 				if response.status_code != 200:
 					print(f"Failed to send score")
-					return """
+					return
 			if self.lobby_group_name in self.GameSessions:
 				del self.GameSessions[self.lobby_group_name]
 		else:
 			self.game_session.streaming = False
+			if (self.max_player_count == 2):
+				await self.channel_layer.group_send(
+        			self.lobby_group_name,
+        			{
+        			'type': 'player_left',
+        		    'message' : 'player disconnected - returning to lobby.',
+   				 	}
+				)			
 		game_update_signal.disconnect(self.game_update_signal_handler, sender=self)
 		game_init_signal.disconnect(self.game_init_signal_handler, sender=self)
 		game_end_signal.disconnect(self.game_end_signal_handler, sender=self)
-
-		if self.game_session.streaming == True:
-			await self.channel_layer.group_send(
-        		self.lobby_group_name,
-        		{
-        		'type': 'player_left',
-        	    'message' : 'player disconnected - returning to lobby.',
-   			 	}
-			)
-
+		
 		await self.channel_layer.group_discard(
 			self.lobby_group_name,
 		    self.channel_name
