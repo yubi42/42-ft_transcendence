@@ -39,7 +39,8 @@
   }
 
 .game-selector.active {
-    height: 100%;
+    width: 100%;
+    aspect-ratio: 2 / 1;
     display: block;
     display: flex;
     flex-direction: column;
@@ -51,6 +52,7 @@
     display: flex;
     width: 80%;
     justify-content: space-around;
+    align-items: center;
   }
 
 .game-selector button {

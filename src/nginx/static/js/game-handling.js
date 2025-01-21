@@ -1,4 +1,5 @@
-import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./sockets.js";
+import { getCSRFToken } from "./auth.js";
+import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./globals.js";
 
 export function startGame(lobby_id, player, player_count, roles, max_score)
 {
@@ -40,7 +41,9 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
       console.log(gameSettings);
     });
 
-    initGameplaySocket(`/ws/gameplay/${max_score}/${player_count}/${lobby_id}/`)
+    const csrfToken=getCSRFToken();
+
+    initGameplaySocket(`/ws/gameplay/${max_score}/${player_count}/${lobby_id}/?csrf_token=${csrfToken}`)
       
     const encodeState = (player, direction, moving) => {
       const playerBit = (player == 'p1' ? 0 : 1);

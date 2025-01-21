@@ -110,13 +110,16 @@ def all(request):
         status=405
     )
 
-def player_joined(request, lobby_id):
+def player_joined(request, lobby_id, user_name):
     if request.method == "POST":
         try:
             lobby = Lobby.objects.get(id=lobby_id)
-            if lobby.current_player_count == 2:
+            if user_name in lobby.in_lobby:
+                return JsonResponse({'error': f'User {user_name} is already in the lobby {lobby_id}'}, status=400)
+            if lobby.current_player_count == lobby.max_player_count:
                 return JsonResponse({'error': f'Lobby full'}, status=400)
             lobby.current_player_count += 1
+            lobby.in_lobby = lobby.in_lobby + [user_name] 
             lobby.save()
             return JsonResponse({'message': f'Player joined lobby {lobby_id}'}, status=200)
         except Lobby.DoesNotExist:
@@ -128,6 +131,7 @@ def player_left(request, lobby_id, user_name):
         try:
             lobby = Lobby.objects.get(id=lobby_id)
             lobby.current_player_count -= 1
+            lobby.in_lobby.remove(user_name)
             if lobby.p1 == user_name:
                 lobby.p1 = None
             if lobby.p2 == user_name:

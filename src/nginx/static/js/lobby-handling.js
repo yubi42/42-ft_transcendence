@@ -1,9 +1,9 @@
-import { lobby_socket, closeSockets, initLobbySocket } from "./sockets.js";
+import { lobby_socket, name, closeSockets, initLobbySocket } from "./globals.js";
 import { lobbyFull } from "./lobby-creation.js";
 import { startGame } from "./game-handling.js";
 import { startPacPong } from "./pacpong-handling.js";
 
-function selectPlayer(role, name, db_value) {
+function selectPlayer(role, db_value) {
     if (lobby_socket && lobby_socket.readyState === WebSocket.OPEN) {
         if (db_value === "None")
         {
@@ -23,10 +23,10 @@ function selectPlayer(role, name, db_value) {
     }
   }
   
-  function generateGuestName() {
-    const randomNumber = Math.floor(1000 + Math.random() * 9000); // Generates a random 4-digit number
-    return `guest${randomNumber}`;
-  }
+  // function generateGuestName() {
+  //   const randomNumber = Math.floor(1000 + Math.random() * 9000); // Generates a random 4-digit number
+  //   return `guest${randomNumber}`;
+  // }
 
 export function joinLocalLobby(lobby_id, lobby_name, max_score, pac_pong)
 {
@@ -65,7 +65,6 @@ export function joinLobby(lobby_id, lobby_name, max_score, pac_pong)
         return;
       }
   
-    const name = generateGuestName();
     const p1 = document.getElementById('p1');
     const p2 = document.getElementById('p2');
     const p3 = document.getElementById('p3');
@@ -89,10 +88,10 @@ export function joinLobby(lobby_id, lobby_name, max_score, pac_pong)
         }
       );
       document.getElementById('lobby').classList.add('active')
-      p1.addEventListener('click', () => selectPlayer('p1', name, roles.p1));
-      p2.addEventListener('click', () => selectPlayer('p2', name, roles.p2));
+      p1.addEventListener('click', () => selectPlayer('p1', roles.p1));
+      p2.addEventListener('click', () => selectPlayer('p2', roles.p2));
       if (pac_pong == 1)
-        p3.addEventListener('click', () => selectPlayer('p3', name, roles.p3));
+        p3.addEventListener('click', () => selectPlayer('p3', roles.p3));
       else
         p3.style.display = 'none';
     };
@@ -145,7 +144,18 @@ export function joinLobby(lobby_id, lobby_name, max_score, pac_pong)
     };
     
     lobby_socket.onerror = console.error;
-    lobby_socket.onclose = () => console.log('Lobby WebSocket closed');
+    lobby_socket.onclose = (event) => {
+      console.log('Lobby WebSocket closed');
+      if (event.code == 4001) {
+        document.querySelectorAll('.online').forEach(content => 
+          {
+            content.classList.remove('active');
+          }
+        );
+        document.getElementById('option-choose').classList.add('active')
+        alert("Player already in lobby.");
+      }
+    }
     
     window.addEventListener('beforeunload', closeSockets);
     });

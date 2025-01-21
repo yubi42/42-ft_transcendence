@@ -1,0 +1,37 @@
+.sign {
+    display: none;
+    width: 80%;
+    height: 80%;
+    aspect-ratio: 2 / 1;
+    background-color: black;
+    position: absolute;
+    align-self: center;
+    justify-self: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.sign.active {
+    display: flex;
+}
+
+.sign span {
+    background-color: yellow;
+    color: black;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.sign-in {
+    display: none;
+    border: 2px solid white;
+    width: 80%;
+    height: 80%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.sign-in.active {
+    display: flex;
+}

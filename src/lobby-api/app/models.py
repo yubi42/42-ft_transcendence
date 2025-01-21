@@ -21,6 +21,10 @@ class Lobby(models.Model):
         default=2, 
         help_text="The number of players currently in the lobby. Maximum is 2."
     )
+    in_lobby = models.JSONField(
+        default=list, 
+        help_text="List of player names currently in the lobby (max 3)."
+    )
     max_score = models.PositiveIntegerField(
         default=3, 
         help_text="The max score of a game session."
@@ -61,3 +65,4 @@ class Lobby(models.Model):
     
     def __str__(self):
         return self.name
+    

@@ -36,7 +36,7 @@ function createLobby(event)
     {
       console.log('Raw response:', response);
       if(response.error)
-        console.log('Error: ' + response.error);
+        alert('Error: ' + response.error);
       else if(response.tournament_mode && response.max_player_count == 1)
         joinLocalTournament(response.lobby, response.lobby_name, response.max_score, response.pac_pong);
       else if(response.tournament_mode)

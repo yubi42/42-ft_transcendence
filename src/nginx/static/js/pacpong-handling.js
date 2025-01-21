@@ -1,4 +1,4 @@
-import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./sockets.js";
+import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./globals.js";
 
 export function startPacPong(lobby_id, player, player_count, roles, max_score) {
 	console.log("in pac pong");

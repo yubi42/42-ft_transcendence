@@ -17,29 +17,34 @@ class LobbyConsumer(AsyncWebsocketConsumer):
             self.lobby_group_name,
             self.channel_name
         )
-
-        await self.player_joined()
-
         await self.accept()
+        player_joined_success = await self.player_joined()
+        if player_joined_success:
+            await self.channel_layer.group_add(
+                self.lobby_group_name,
+                self.channel_name
+            )
+        else:
+            await self.close(code=4001)
 
     async def disconnect(self, close_code):
-        # Remove the user from the lobby group
 
-        if await self.player_left() == 0:
-            await self.delete_lobby_entry()
-        else:
-            await self.channel_layer.group_send(
-                self.lobby_group_name,
-                {
-                    'type': 'disable_start_button',
-                    'message' : 'start button disabled'
-                }
-            )
+        if close_code != 4001:
+            if await self.player_left() == 0:
+                await self.delete_lobby_entry()
+            else:
+                await self.channel_layer.group_send(
+                    self.lobby_group_name,
+                    {
+                        'type': 'disable_start_button',
+                        'message' : 'start button disabled'
+                    }
+                )
             
-        await self.channel_layer.group_discard(
-            self.lobby_group_name,
-            self.channel_name
-        )
+            await self.channel_layer.group_discard(
+                self.lobby_group_name,
+                self.channel_name
+            )
 
     async def receive(self, text_data):
         # Handle messages from the WebSocket
@@ -169,12 +174,12 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         }))
 
     async def player_joined(self):
-        url = f"http://nginx:80/lobby/player_joined/{self.lobby_id}/"
+        url = f"http://nginx:80/lobby/player_joined/{self.lobby_id}/{self.user_name}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
-                print(f"Failed to join lobby {self.lobby_id}: {response.text}")
-                return
+                return False
+            return True
     
     async def player_left(self):
         url = f"http://nginx:80/lobby/player_left/{self.lobby_id}/{self.user_name}/"

@@ -1,8 +1,8 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .signals import game_update_signal, game_init_signal, game_end_signal
 import asyncio, time, threading, json, httpx
-# import logging
-# logger = logging.getLogger(__name__)
+import logging
+logger = logging.getLogger(__name__)
 
 # from multiprocessing.shared_memory import SharedMemory
 # from channels.db import database_sync_to_async
@@ -78,6 +78,7 @@ class PongGame(AsyncWebsocketConsumer):
 
 	async def connect(self):
 		# This is called when the WebSocket connection is first made
+		self.csrf_token = self.scope['query_string'].decode('utf-8').split('=')[-1]
 		self.lobby_id = self.scope['url_route']['kwargs']['lobby_id']
 		self.max_player_count = int(self.scope['url_route']['kwargs']['max_player'])
 		self.max_score = int(self.scope['url_route']['kwargs']['max_score'])
@@ -133,27 +134,36 @@ class PongGame(AsyncWebsocketConsumer):
 	async def disconnect(self, close_code):
 		# This is called when the WebSocket connection is closed
 		await asyncio.to_thread(self.decrease_player_count)
+		logger.debug("self.game_session.streaming: %s", self.game_session.streaming)
 		if self.game_session.streaming == False:
 			# logger.debug("Deleting lobby....")
+			logger.debug("self.max_player_count: %s", self.max_player_count)
 			if self.max_player_count == 2:
-				game_mode = 'multi-player'
-				url = f"http://nginx:80/lobby/players/{self.lobby_id}"
+				url = f"http://nginx:80/lobby/players/{self.lobby_id}/"
 				async with httpx.AsyncClient() as client:
 					response = await client.get(url)
 				if response.status_code != 200:
-					print(f"Failed to get players.")
+					logger.debug(f"Failed to get players.")
 					return
 				roles = response.json()
+				logger.debug(roles)
 				url = f"http://nginx:80/user-api/addgame/"
 				async with httpx.AsyncClient() as client:
-					response = await client.post(url, data=
-									{'gameMode': game_mode,
-				   					'players':[roles.p1, roles.p2],
-									'score': [self.Lscore, self.Rscore],
-				   					})
-				if response.status_code != 200:
-					print(f"Failed to send score")
-					return
+					response = await client.post(url, 
+								json={'gameMode': 'two-player-pong',
+				   					'players':[roles['p1'], roles['p2']],
+									'score': [self.game_session.Lscore, self.game_session.Rscore],
+				   					},
+            					headers={
+            					    'Content-Type': 'application/json',
+            					    'X-CSRFToken': self.csrf_token,  # Pass the CSRF token in the header
+            					},
+            					cookies={  # If the CSRF token is associated with a session cookie
+            					    'csrftoken': self.csrf_token
+            					})
+				if response.status_code != 201:
+					logger.debug(f"Failed to send score")
+					# return
 			if self.lobby_group_name in self.GameSessions:
 				del self.GameSessions[self.lobby_group_name]
 		else:
