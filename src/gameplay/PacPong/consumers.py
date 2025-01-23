@@ -324,11 +324,11 @@ class PacPongGame(AsyncWebsocketConsumer):
 			if self.game_session.pac[1] > self.game_session.screen_height - self.game_session.pac_size/2:
 				self.game_session.pac[1] = self.game_session.screen_height - self.game_session.pac_size/2
 			
-			if self.game_session.pac[0] < 0 + self.game_session.pac_size/2:
-				self.game_session.pac[0] = 0 + self.game_session.pac_size/2
+			if self.game_session.pac[0] < (self.game_session.screen_width / 3) + self.game_session.pac_size/2:
+				self.game_session.pac[0] = (self.game_session.screen_width / 3) + self.game_session.pac_size/2
 			
-			if self.game_session.pac[0] > self.game_session.screen_width - self.game_session.pac_size/2:
-				self.game_session.pac[0] = self.game_session.screen_width - self.game_session.pac_size/2
+			if self.game_session.pac[0] > ((self.game_session.screen_width / 3) * 2) - self.game_session.pac_size/2:
+				self.game_session.pac[0] = ((self.game_session.screen_width / 3) * 2) - self.game_session.pac_size/2
 
 			#make pac collide with the ball
 			# Calculate the distance between the centers of the two balls
@@ -388,8 +388,8 @@ class PacPongGame(AsyncWebsocketConsumer):
 					self.game_session.ball_speedY -= self.game_session.ball_bounce_mult
 				self.game_session.ball_speedX *= -1
 			#Right Paddle 
-			if(self.game_session.ball[0] > self.game_session.screen_width - self.game_session.paddle_width - self.game_session.ball_size and (self.game_session.ball[1] + self.game_session.ball_size >= self.game_session.paddleR and self.game_session.ball[1] <= self.game_session.paddleR + self.game_session.paddle_heigth)):
-				self.game_session.ball[0] = self.game_session.screen_width - self.game_session.paddle_width - self.game_session.ball_size
+			if(self.game_session.ball[0] > self.game_session.screen_width - self.game_session.ball_size and (self.game_session.ball[1] + self.game_session.ball_size >= self.game_session.paddleR and self.game_session.ball[1] <= self.game_session.paddleR + self.game_session.paddle_heigth)):
+				self.game_session.ball[0] = self.game_session.screen_width - self.game_session.ball_size
 				self.game_session.passes += 1
 				if self.game_session.paddleR_speed > 0:
 					self.game_session.ball_speedY += self.game_session.ball_bounce_mult
