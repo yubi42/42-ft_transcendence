@@ -324,11 +324,11 @@ class PacPongGame(AsyncWebsocketConsumer):
 			if self.game_session.pac[1] > self.game_session.screen_height - self.game_session.pac_size/2:
 				self.game_session.pac[1] = self.game_session.screen_height - self.game_session.pac_size/2
 			
-			if self.game_session.pac[0] < 0 + self.game_session.pac_size/2:
-				self.game_session.pac[0] = 0 + self.game_session.pac_size/2
+			if self.game_session.pac[0] < (self.game_session.screen_width / 3) + self.game_session.pac_size/2:
+				self.game_session.pac[0] = (self.game_session.screen_width / 3) + self.game_session.pac_size/2
 			
-			if self.game_session.pac[0] > self.game_session.screen_width - self.game_session.pac_size/2:
-				self.game_session.pac[0] = self.game_session.screen_width - self.game_session.pac_size/2
+			if self.game_session.pac[0] > ((self.game_session.screen_width / 3) * 2) - self.game_session.pac_size/2:
+				self.game_session.pac[0] = ((self.game_session.screen_width / 3) * 2) - self.game_session.pac_size/2
 
 			#make pac collide with the ball
 			# Calculate the distance between the centers of the two balls
