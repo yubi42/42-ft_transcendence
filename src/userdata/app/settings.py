@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import environ
 import os
+import sys
 from pathlib import Path
 
 env = environ.Env()
@@ -62,11 +63,12 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+			'stream': sys.stdout,
         },
     },
     'loggers': {
         'django.db.backends': {
-            'level': 'DEBUG',
+            'level': 'INFO', # Set to DEBUG if also db queries should be shown
             'handlers': ['console'],
         },
     },
@@ -174,3 +176,7 @@ SIGNUP_REDIRECT_URL = "/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760

@@ -15,7 +15,7 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('django')
 
 @api_view(['POST'])
 def signup_view(request):
@@ -78,6 +78,12 @@ def update_profile_view(request):
     profile = Profile.objects.get(user=request.user)
     serializer = ProfileSerializer(profile, data=request.data, partial=True)
     if serializer.is_valid():
+        user = profile.user
+        email = request.data.get('email')
+        if email:
+            user.email = email
+            user.save()
+
         serializer.save()
         return Response({"message": "Profile updated successfully"}, status=status.HTTP_200_OK)
     else:
@@ -109,5 +115,3 @@ def add_friend_view(request):
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-def test_view(request):
-    return HttpResponse("<html>Hello, World!</html>")

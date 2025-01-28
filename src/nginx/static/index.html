@@ -9,6 +9,8 @@
 	<link rel="stylesheet" href="./css/game_3d.css">
 	<link rel="stylesheet" href="./css/game-modes.css">
 	<link rel="stylesheet" href="./css/navbar.css">
+	<link rel="stylesheet" href="./css/login.css">
+	<link rel="stylesheet" href="./css/pop-up.css">
     <script type="importmap">
         {
           "imports": {
@@ -35,16 +37,7 @@
   <main>
     <div class="chat"></div>
     <div>
-      <div class="game-mode-tabs">
-        <div class="game-tab active" id="local-tab"><p>Local</p></div>
-        <div class="game-tab" id="online-tab"><p>Online</p></div>
-        <div class="game-tab" id="tournament-tab"><p>Tournament Mode</p></div>
-      </div>
-      <div class="game-modes">
-        <div class="game-selector active" id="local">
-          <p>Local</p>
-        </div>
-        <div class="game-selector" id="online">
+        <div class="game-selector active" id="online">
           <div class="online active" id="option-choose">
             <button id="prepare-lobby">Create Lobby</button>
             <button id="list-lobbies">Join Lobby</button>
@@ -58,17 +51,32 @@
               <input type="text" id="lobby-name" name="lobby_name" required>
             </div>
             <div>
-              <label for="mode-options"></label>
               <div id="mode-options">
                 <label class="score-option">
                   <input type="radio" name="mode" value="1" checked>
                   <span>local</span>
                 </label>
                 <label class="score-option">
-                  <input type="radio" name="mode" value="2" checked>
+                  <input type="radio" name="mode" value="2">
                   <span>online</span>
                 </label>
               </div>
+            </div>
+            <div>
+              <div id="pong-modes">
+                <label class="score-option">
+                  <input type="radio" name="pong-mode" value="0" checked>
+                  <span>Pong</span>
+                </label>
+                <label class="score-option">
+                  <input type="radio" name="pong-mode" value="1">
+                  <span>PacPong</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label for="tournament-mode">Tournament Mode:</label>
+              <input type="checkbox" name="tornament-mode" id="tournament-mode">
             </div>
             <div>
               <label for="score-options">Score:</label>
@@ -97,6 +105,7 @@
             <h2 id="lobby-header">Lobby: </h2>
             <div>
               <button class="player_button" id="p1"><p>P1</p></button>
+              <button class="player_button" id="p3"><p>PacMan</p></button>
               <button class="player_button" id="p2"><p>P2</p></button>
             </div>
             <button class="start_button" id="start_game">Start Game</button>
@@ -110,20 +119,33 @@
             <canvas id="game-canvas"></canvas>
           </div>
         </div>
-        <div class="game-selector" id="tournament">
-          <p>Tournament Mode</p>
-        </div>
-      </div>
     </div>
 
     <!-- <button id="test-api">Test API</button> -->
     <pre id="output"></pre>
     <!-- <canvas id="three-canvas"></canvas>  -->
+     <div class="sign" id="sign">
+      <form class="sign-in active" id="login-form">
+        <h2>Login</h2>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Log In</button>
+        <p>Don't have an account? <span href="#" id="signup-link">Sign Up</span></p>
+      </form>
+      <form class="sign-in" id="signup-form">
+        <h2>Sign Up</h2>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Sign Up</button>
+        <p>Already have an account? <span href="#" id="login-link">Log In</span></p>
+      </form>
+     </div>
   </main>
 	
   <!-- <script type="module" src="./js/game_3d.js"></script> -->
   <!-- <script type="module" src="./js/auth.js"></script> -->
-  <script type="module" src="./js/sockets.js"></script>
+  <script type="module" src="./js/globals.js"></script>
   <script type="module" src="./js/game-handling.js"></script>
   <script type="module" src="./js/lobby-creation.js"></script>
   <script type="module" src="./js/lobby-handling.js"></script>

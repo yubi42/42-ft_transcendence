@@ -3,6 +3,8 @@ export let lobby_socket;
 
 export let gameplay_socket;
 
+export let name;
+
 export function initLobbySocket(url)
 {
     if (!lobby_socket)
@@ -36,3 +38,11 @@ export function closeSockets() {
     lobby_socket = null;
     closeGameplaySocket();
   }
+
+export function setName(_name) {
+  name = _name;
+  }
+
+export function unsetName() {
+  name = "";
+}

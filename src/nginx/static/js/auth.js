@@ -1,4 +1,5 @@
 import { showLoginForm } from './dom-utils.js';
+import { unsetName } from './globals.js';
 
 export function getCSRFToken() {
     let csrfToken = null;
@@ -67,6 +68,7 @@ export async function logout(event) {
     try {
         const response = await postAPI('/user-api/logout/', {});
         if (response.message) {
+            unsetName();
             window.location.href = '/';
         } else {
             alert('Failed to log out.');
