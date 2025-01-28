@@ -33,24 +33,24 @@ async function checkAuthentication() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
         });
-        document.getElementById('sign').classList.remove('active');
-        document.querySelectorAll('.sign-in').forEach(content => 
-            {
-              content.classList.remove('active');
-            }
-          );
 
-          console.error(`Raw Response: ${response.status}`);
+        // document.querySelectorAll('.sign-in').forEach(content => 
+        //     {
+        //       content.classList.remove('active');
+        //     }
+        //   );
           
         if (response.ok) {
             const data = await response.json();
             setName(data.display_name);
             document.getElementById('sign').classList.remove('active');
+            document.getElementById('sign-background').classList.remove('active');
             document.getElementById('login-button').style.display = 'none';
             document.getElementById('signup-button').style.display = 'none';
             document.getElementById('logout-button').style.display = 'inline-block';
             document.getElementById('profile-button').style.display = 'inline-block';
         } else {
+            document.getElementById('sign-background').classList.add('active');
             document.getElementById('sign').classList.add('active');
             document.getElementById('login-form').classList.add('active');
             document.getElementById('login-button').style.display = 'inline-block';
