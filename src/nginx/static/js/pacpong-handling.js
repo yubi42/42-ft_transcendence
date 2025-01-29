@@ -38,9 +38,9 @@ export function startPacPong(lobby_id, player, player_count, roles, max_score) {
     const csrfToken = getCSRFToken();
 
 	if (player_count == 1)
-		initGameplaySocket(`/ws/gameplay/PacPong/local/${max_score}/${lobby_id}/?csrf_token=${csrfToken}`)
+		initGameplaySocket(`/ws/gameplay/PacPong/local/${max_score}/${lobby_id}/`)
 	else 
-		initGameplaySocket(`/ws/gameplay/PacPong/${max_score}/${lobby_id}/?csrf_token=${csrfToken}`)
+		initGameplaySocket(`/ws/gameplay/PacPong/${max_score}/${lobby_id}/`)
 
 
 	// Override the send method

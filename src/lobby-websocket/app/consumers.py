@@ -215,11 +215,15 @@ class LobbyConsumer(AsyncWebsocketConsumer):
 
     async def delete_lobby_entry(self):
         url = f"http://nginx:80/lobby/delete/{self.lobby_id}/"
-        form_data = {
-        'csrf_token': self.csrf_token,
-        }
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, data=form_data)
+            response = await client.post(
+                    url,
+                    headers={
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': self.csrf_token,
+                    },
+                    cookies=self.cookies,
+                )
             if response.status_code != 200:
                 print(f"Failed to delete lobby {self.lobby_id}: {response.text}")
                 return

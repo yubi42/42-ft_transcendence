@@ -153,6 +153,20 @@ def player_left(request, lobby_id, user_name):
 
 def delete_lobby_entry(request, lobby_id):
     if request.method == "POST":
+        csrf_token = request.POST.get('csrf_token')
+        if not csrf_token:
+            csrf_token = request.headers.get('X-CSRFToken')
+        auth_response = requests.get(
+            "http://nginx:80/user-api/profile/",
+            headers = {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf_token,
+            },
+            cookies=request.COOKIES
+        )
+        if auth_response.status_code != 200:
+            return JsonResponse({'error': 'Unauthorized user'}, status=401)
+
         try:
             lobby = Lobby.objects.get(id=lobby_id)
             lobby.delete()  # Delete the lobby from the database

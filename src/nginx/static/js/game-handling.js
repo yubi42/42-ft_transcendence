@@ -56,9 +56,9 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
     const csrfToken = getCSRFToken();
 
     if (player_count == 1)
-      initGameplaySocket(`/ws/gameplay/local/${max_score}/${lobby_id}/?csrf_token=${csrfToken}`);
+      initGameplaySocket(`/ws/gameplay/local/${max_score}/${lobby_id}/`);
     else
-    initGameplaySocket(`/ws/gameplay/${max_score}/${lobby_id}/?csrf_token=${csrfToken}`);
+    initGameplaySocket(`/ws/gameplay/${max_score}/${lobby_id}/`);
 
     const encodeState = (player, direction, moving) => {
       const playerBit = (player == 'p1' ? 0 : 1);

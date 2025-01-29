@@ -62,7 +62,6 @@ class PongGame(AsyncWebsocketConsumer):
 
 	async def connect(self):
 		# This is called when the WebSocket connection is first made
-		self.csrf_token = self.scope['query_string'].decode('utf-8').split('=')[-1]
 		self.lobby_id = self.scope['url_route']['kwargs']['lobby_id']
 		self.max_score = int(self.scope['url_route']['kwargs']['max_score'])
 		self.lobby_group_name = f"lobby_{self.lobby_id}"

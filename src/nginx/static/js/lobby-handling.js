@@ -70,17 +70,17 @@ function popstateDeleteLobby()
 }
 
 function deleteLobby() {
-  const url = `/lobby/delete/${window.currentLobbyId}/`;
-  const data = new FormData();
-  data.append('csrf_token', getCSRFToken());
+    const url = `/lobby/delete/${window.currentLobbyId}/`;
+    const data = new FormData();
+    data.append('csrf_token', getCSRFToken());
 
-  if (!navigator.sendBeacon(url, data)) {
-    console.error(`Failed to send delete request for Lobby: ${window.currentLobbyId}`);
-  } else {
-    console.log("Lobby delete request sent successfully.");
-        window.removeEventListener('beforeunload', beforeunloadDeleteLobby);
-        window.removeEventListener('popstate', popstateDeleteLobby);
-  }
+    if (!navigator.sendBeacon(url, data)) {
+      console.error(`Failed to send delete request for Lobby: ${window.currentLobbyId}`);
+    } else {
+      console.log("Lobby delete request sent successfully.");
+          window.removeEventListener('beforeunload', beforeunloadDeleteLobby);
+          window.removeEventListener('popstate', popstateDeleteLobby);
+    }
 }
   
 export function joinLobby(lobby_id, lobby_name, max_score, pac_pong)
