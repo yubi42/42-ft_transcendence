@@ -1,6 +1,5 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .signals import game_update_signal, game_init_signal, game_end_signal
-import asyncio, time, threading, json, math, httpx
+import asyncio, time, json, math, httpx
 # import logging
 # logger = logging.getLogger(__name__)
 
