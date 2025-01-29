@@ -1,5 +1,10 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 from . import views
+
+router = DefaultRouter()
+router.register(r'friends', views.FriendActionsViewSet, basename='friends')
+router.register(r'friend-requests', views.FriendRequestViewSet, basename='friend_requests')
 
 urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
@@ -8,6 +13,6 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('update-profile/', views.update_profile_view, name='update_profile'),
     path('upload-avatar/', views.upload_avatar, name='upload_avatar'),
-    path('add-friend/', views.add_friend_view, name='add_friend'),
+    path('', include(router.urls)),
 	#path('game-history/', views.add_friend_view, name='game_history')
 ]

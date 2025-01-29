@@ -1,7 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
+from .models import FriendRequest
 from django.db import models
+from datetime import timedelta
+from django.utils.timezone import now
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,24 +13,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    friends = UserSerializer(many=True, read_only=True)
     stats = serializers.JSONField(read_only=True)
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ['user', 'display_name', 'avatar_url', 'friends', 'stats']
+        fields = ['user', 'display_name', 'avatar_url', 'stats']
 
-    def get_friends(self, obj):
-        # Serialize the user associated with each friend profile.
-        return [
-            {
-                "id": friend.user.id,
-                "username": friend.user.username,
-                "email": friend.user.email,
-            }
-            for friend in obj.friends.all()
-        ]
 
     def get_avatar_url(self, obj):
         """Return the avatar URL or a default if not set."""
@@ -49,3 +41,32 @@ class ProfileSerializer(serializers.ModelSerializer):
             instance.user.save()
         instance.save()
         return instance
+
+class FriendSerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+    is_friend = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = ['id', 'username', 'is_friend']
+
+    def get_username(self, obj):
+        """Ensure we always get the correct username whether obj is Profile or User."""
+        if isinstance(obj, User):
+            return obj.username
+        return obj.user.username
+
+    def get_is_friend(self, obj):
+        request = self.context.get('request', None)
+        if request and request.user.is_authenticated:
+            return obj in request.user.profile.friends.all()
+        return False
+
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    from_user = serializers.CharField(source='from_user.username')
+    to_user = serializers.CharField(source='to_user.username')
+
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'from_user', 'to_user', 'created_at', 'is_accepted', 'is_rejected']
