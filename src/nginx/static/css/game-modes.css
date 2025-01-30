@@ -242,6 +242,14 @@
   visibility: visible;
 }
 
+#tournament-check {
+  display: none;
+}
+
+#tournament-check.active {
+  display: flex;
+}
+
 #game {
   height: 90%;
   width: 100%;

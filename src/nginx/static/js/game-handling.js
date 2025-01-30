@@ -53,8 +53,6 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
       console.log(gameSettings);
     });
 
-    const csrfToken = getCSRFToken();
-
     if (player_count == 1)
       initGameplaySocket(`/ws/gameplay/local/${max_score}/${lobby_id}/`);
     else

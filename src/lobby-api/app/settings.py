@@ -32,13 +32,13 @@ ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1", 'lobby_api', 'lobby_websoc
 # Application definition
 
 INSTALLED_APPS = [
+    'app',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'app',
 ]
 
 MIDDLEWARE = [

@@ -11,7 +11,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         self.pac_pong = self.scope['url_route']['kwargs']['pac_pong']
         self.user_name = self.scope["url_route"]["kwargs"]["user_name"]
         self.lobby_group_name = f"lobby_{self.lobby_id}"
-        self.roles = {"p1": None, "p2": None, "p3": None}
+        self.roles = {"p1": None, "p2": None, "p3": None, "p4": None, "p5": None, "p6": None, "p7": None, "p8": None}
 
         self.cookies = self.scope.get('cookies', {})
         self.csrf_token = self.cookies.get('csrftoken', None)

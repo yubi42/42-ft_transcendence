@@ -7,6 +7,23 @@ document.getElementById('list-lobbies').addEventListener('click', listLobbies);
 
 document.getElementById('lobby-form').addEventListener('submit', createLobby);
 
+document.addEventListener("DOMContentLoaded", function () {
+  const pongModes = document.querySelectorAll("input[name='pong-mode']");
+  const tournamentCheck = document.getElementById("tournament-check");
+  const tournamentMode = document.getElementById("tournament-mode");
+
+  pongModes.forEach((mode) => {
+    mode.addEventListener("change", function () {
+      if (this.value === "0") {
+        tournamentCheck.classList.add("active");
+      } else {
+        tournamentCheck.classList.remove("active");
+        tournamentMode.checked = false;
+      }
+    });
+  });
+});
+
 function prepareLobby() 
 {
   document.querySelectorAll('.online').forEach(content => 
