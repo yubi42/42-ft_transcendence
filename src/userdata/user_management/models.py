@@ -14,11 +14,21 @@ def defaultStats():
 	return initStats
 
 class Profile(models.Model):
-	user = models.OneToOneField(User, on_delete=models.CASCADE)
-	display_name = models.CharField(max_length=50, unique=True)
-	avatar = models.ImageField(upload_to="avatars/", default="avatars/default.png")
-	friends = models.ManyToManyField("self", blank=True)
-	stats = models.JSONField(default=defaultStats)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=50, unique=True)
+    avatar = models.ImageField(upload_to="avatars/", default="avatars/default.png")
+    friends = models.ManyToManyField("self", blank=True, symmetrical=True)
+    stats = models.JSONField(default=defaultStats)
 
-	def __str__(self):
-		return self.user.username
+    def __str__(self):
+        return self.user.username
+
+class FriendRequest(models.Model):
+    from_user = models.ForeignKey(User, related_name="sent_requests", on_delete=models.CASCADE)
+    to_user = models.ForeignKey(User, related_name="received_requests", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.from_user} → {self.to_user}"

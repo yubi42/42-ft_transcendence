@@ -2,7 +2,9 @@ import { getCSRFToken, logout} from './auth.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     fetchProfileData();
+    fetchFriends();
 	fetchMatchHistory();
+    fetchPendingRequests();
     document.getElementById('logout-button').addEventListener('click', logout);
     document.getElementById('settings-button').addEventListener('click', function() {
         window.location.href = 'update-profile.html';
@@ -15,7 +17,42 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('avatar-upload').addEventListener('change', uploadAvatar);
     document.getElementById('add-friend-btn').addEventListener('click', addFriend);
+    document.getElementById('fetch-pending-requests').addEventListener('click', fetchPendingRequests);
 });
+
+function updateFriendsList(friends) {
+    let friendsContainer = document.getElementById("friends");
+    if (!friendsContainer) return;
+
+    friendsContainer.innerHTML = "";
+
+    friends.forEach(friend => {
+        let friendItem = document.createElement("li");
+        friendItem.classList.add('friend-item');
+        friendItem.id = `friend-${friend.id}`;
+
+        friendItem.innerHTML = `
+            <span class="friend-name">${friend.username}</span>
+            <button class="remove-friend-btn" data-username="${friend.username}">Remove</button>
+            <button class="block-friend-btn" data-username="${friend.username}">Block</button>
+        `;
+
+        friendsContainer.appendChild(friendItem);
+    });
+
+    document.querySelectorAll('.remove-friend-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            removeFriend(this.getAttribute('data-username'));
+        });
+    });
+
+    document.querySelectorAll('.block-friend-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            blockFriend(this.getAttribute('data-username'));
+        });
+    });
+}
+
 
 function fetchProfileData() {
     fetch('/user-api/profile/', {
@@ -41,8 +78,8 @@ function fetchProfileData() {
 		document.getElementById('draws').textContent = data.stats["games-draws"];
 		document.getElementById('ranking-score').textContent = data.stats["ranking-score"];
 		document.getElementById('games-played').textContent = data.stats["games-played"];
-        if (data.avatar) {
-            document.getElementById('avatar').src = data.avatar;
+        if (data.avatar_url) {
+            document.getElementById('avatar').src = data.avatar_url;
         }
         updateFriendsList(data.friends);
     })
@@ -52,14 +89,141 @@ function fetchProfileData() {
     });
 }
 
-function updateFriendsList(friends) {
+async function fetchFriends() {
+    try {
+        const response = await fetch('/user-api/friends/list/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            credentials: 'include',
+        });
+
+        if (!response.ok) throw new Error(`Error fetching friends: ${response.status}`);
+
+        const friends = await response.json();
+        displayFriends(friends);
+    } catch (error) {
+        console.error(error);
+        alert('Failed to load friends.');
+    }
+}
+
+function displayFriends(friends) {
     const friendsList = document.getElementById('friends');
     friendsList.innerHTML = '';
     friends.forEach(friend => {
-        const li = document.createElement('li');
-        li.textContent = `${friend.username} (${friend.online ? 'Online' : 'Offline'})`;
-        friendsList.appendChild(li);
+        const friendItem = document.createElement('li');
+        friendItem.classList.add('friend-item');
+        friendItem.id = `friend-${friend.id}`;
+
+        friendItem.innerHTML = `
+            <span class="friend-name">${friend.username}</span>
+            <span class="friend-status" id="user-status-${friend.id}" style="color: ${friend.online_status ? 'green' : 'red'};">
+                ${friend.online_status ? 'Online' : 'Offline'}
+            </span>
+            <button class="remove-friend-btn" data-username="${friend.username}">Remove</button>
+            <button class="block-friend-btn" data-username="${friend.username}">Block</button>
+        `;
+
+        friendsList.appendChild(friendItem);
     });
+
+    document.querySelectorAll('.remove-friend-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            removeFriend(this.getAttribute('data-username'));
+        });
+    });
+
+    document.querySelectorAll('.block-friend-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            blockFriend(this.getAttribute('data-username'));
+        });
+    });
+}
+
+
+async function addFriend() {
+    const friendUsername = document.getElementById('friend-username').value.trim();
+    if (!friendUsername) {
+        alert('Please enter a username.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/user-api/friends/add/${friendUsername}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            credentials: 'include',
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert(`${friendUsername} has been added.`);
+            fetchFriends();
+        } else {
+            throw new Error(data.message || 'Failed to add friend.');
+        }
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
+}
+
+async function removeFriend(username) {
+    if (!confirm(`Are you sure you want to remove ${username} from your friends?`)) return;
+
+    try {
+        const response = await fetch(`/user-api/friends/remove/${username}/`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            credentials: 'include',
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert(`${username} has been removed.`);
+            fetchFriends();
+        } else {
+            throw new Error(data.message || 'Failed to remove friend.');
+        }
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
+}
+
+async function blockFriend(username) {
+    if (!confirm(`Are you sure you want to block ${username}? This action cannot be undone.`)) return;
+
+    try {
+        const response = await fetch(`/user-api/block-user/${username}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            credentials: 'include',
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert(`${username} has been blocked.`);
+            fetchFriends();
+        } else {
+            throw new Error(data.message || 'Failed to block user.');
+        }
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
 }
 
 function getGameStatus(score, playerIdx){
@@ -81,7 +245,7 @@ function getGameStatus(score, playerIdx){
 async function fetchMatchHistory() {
 	const tableBody = document.getElementById('match-history-body');
 	try {
-	const response = await fetch('/user-api/game-history?' + 
+	const response = await fetch('/user-api/game-history?' +
 		new URLSearchParams({limit: '10'}).toString(),{
 			method: 'GET',
 			headers: {
@@ -144,6 +308,9 @@ function uploadAvatar(event) {
             method: 'POST',
             body: formData,
             credentials: 'include',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
         })
         .then(response => response.json())
         .then(data => {
@@ -161,33 +328,101 @@ function uploadAvatar(event) {
     }
 }
 
+async function fetchPendingRequests() {
+    try {
+        const response = await fetch('/user-api/friend-requests/pending/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            credentials: 'include',
+        });
 
-function addFriend() {
-    const friendUsername = document.getElementById('friend-username').value;
-    if (friendUsername) {
-        fetch('/user-api/add-friend/', {
+        if (!response.ok) throw new Error('Failed to fetch pending requests.');
+
+        const data = await response.json();
+        displayPendingRequests(data.pending_requests);
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
+}
+
+
+async function acceptFriendRequest(requestId) {
+    try {
+        const response = await fetch(`/user-api/friend-requests/accept/${requestId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
             },
-            body: JSON.stringify({ friend_username: friendUsername }),
             credentials: 'include',
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error('Failed to add friend');
-            }
-        })
-        .then(data => {
-            alert('Friend added successfully!');
-            fetchProfileData();
-        })
-        .catch(error => {
-            console.error('Error adding friend:', error);
-            alert('Failed to add friend.');
         });
+
+        if (!response.ok) throw new Error('Failed to accept friend request.');
+
+        alert('Friend request accepted.');
+        fetchFriends();
+        fetchPendingRequests();
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
     }
 }
+
+async function declineFriendRequest(requestId) {
+    try {
+        const response = await fetch(`/user-api/friend-requests/decline/${requestId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            credentials: 'include',
+        });
+
+        if (!response.ok) throw new Error('Failed to decline friend request.');
+
+        alert('Friend request declined.');
+        fetchPendingRequests();
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
+}
+
+function displayPendingRequests(requests) {
+    const requestsList = document.getElementById('pending-requests');
+    requestsList.innerHTML = '';
+
+    if (requests.length === 0) {
+        requestsList.innerHTML = '<p>No pending friend requests.</p>';
+        return;
+    }
+
+    requests.forEach(request => {
+        const requestItem = document.createElement('li');
+        requestItem.innerHTML = `
+            ${request.from_user}
+            <button onclick="acceptFriendRequest(${request.id})">Accept</button>
+            <button onclick="declineFriendRequest(${request.id})">Decline</button>
+        `;
+        requestsList.appendChild(requestItem);
+    });
+
+     document.querySelectorAll('.accept-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            acceptFriendRequest(this.getAttribute('data-id'));
+        });
+    });
+
+    document.querySelectorAll('.decline-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            declineFriendRequest(this.getAttribute('data-id'));
+        });
+    });
+}
+
+
