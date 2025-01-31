@@ -79,7 +79,7 @@ export async function verify2FA(event, username) {
     const otp = formData.get('otp');
 
     try {
-        const response = await postAPI('/user-api/verify/', { otp });
+        const response = await postAPI('/user-api/2fa/verify/', { otp, username });  // ✅ Send username
 
         if (response.tokens) {
             saveTokens(response.tokens);
@@ -94,10 +94,11 @@ export async function verify2FA(event, username) {
     }
 }
 
+
 export async function resendOTP(event) {
     event.preventDefault();
     try {
-        const response = await postAPI('/user-api/resend-otp/', {});
+        const response = await postAPI('/user-api/2fa/resend-otp/', {});
         if (response.message) {
             alert('A new OTP has been sent to your email.');
         } else {

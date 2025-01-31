@@ -42,4 +42,4 @@ class TwoFactorCode(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
-        return (now() - self.timestamp).seconds < 300
+        return (timezone.now() - self.timestamp).seconds < 300

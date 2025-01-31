@@ -23,6 +23,8 @@ from django.core.mail import send_mail
 from django.core.cache import cache
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import AllowAny
+from django.conf import settings
+
 
 logger = logging.getLogger('django')
 
@@ -51,11 +53,10 @@ def generate_otp(user):
     send_email_code(user, otp.code)
 
 def send_email_code(user, otp_code):
-    """
-    Sends an email with the OTP code.
-    """
+
     subject = "Your OTP Code"
     message = f"Hello {user.username},\n\nYour OTP code is {otp_code}. It is valid for 5 minutes."
+    sender_email = settings.EMAIL_HOST_USER
     send_mail(subject, message, "no-reply@example.com", [user.email])
 
 
@@ -110,40 +111,50 @@ def login_view(request):
     return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['POST'])
-@login_required
+@permission_classes([AllowAny])
 def verify_2fa(request):
     otp_code = request.data.get('otp')
-    attempts_key = f"otp_attempts_{request.user.id}"
+    username = request.data.get('username')
 
-    if not otp_code:
-        return Response({"error": "OTP code is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if not otp_code or not username:
+        return Response({"error": "OTP code and username are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-    otp_record = TwoFactorCode.objects.filter(user=request.user, code=otp_code).first()
+    user = User.objects.filter(username=username).first()
+    if not user:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    if not otp_record:
-        cache.incr(attempts_key)
-        cache.expire(attempts_key, 300)
-        return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+    otp_record = TwoFactorCode.objects.filter(user=user, code=otp_code).first()
 
-    if otp_record.is_valid():
-        otp_record.delete()
-        cache.delete(attempts_key)
+    if not otp_record or not otp_record.is_valid():
+        return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
-        tokens = create_tokens(request.user, two_fa_status=True)
+    otp_record.delete()
+    tokens = create_tokens(user, two_fa_status=True)
 
-        return Response({
-            "message": "2FA verification successful.",
-            "tokens": tokens
-        }, status=status.HTTP_200_OK)
-
-    return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({
+        "message": "2FA verification successful.",
+        "tokens": tokens
+    }, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+@login_required
 def logout_view(request):
-    tokens = RefreshToken(request.data.get('refresh'))
-    tokens.blacklist()
-    logout(request)
-    return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+    try:
+        refresh_token = request.data.get('refresh')
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception as e:
+                logger.warning(f"Failed to blacklist token: {e}")
+
+        logout(request)
+        return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Logout error: {e}")
+        return Response({"error": "Logout failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 @api_view(['POST'])
@@ -214,14 +225,13 @@ def toggle_2fa(request):
     profile = request.user.profile
 
     if enable:
-        generate_otp(request.user)
         profile.twoFA_active = True
         profile.save()
-        return Response({"message": "2FA enabled. OTP sent to your email."}, status=status.HTTP_200_OK)
+        return Response({"message": "2FA enabled."}, status=status.HTTP_200_OK)
 
     else:
         profile.twoFA_active = False
-        TwoFactorCode.objects.filter(user=request.user).delete()  # Clear any active OTPs
+        TwoFactorCode.objects.filter(user=request.user).delete()
         profile.save()
         return Response({"message": "2FA disabled."}, status=status.HTTP_200_OK)
 
