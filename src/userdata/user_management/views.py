@@ -8,20 +8,59 @@ from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.http import HttpResponse
-from .models import Profile, FriendRequest
-from .serializers import UserSerializer, ProfileSerializer, FriendSerializer, FriendRequestSerializer
+from .models import Profile, FriendRequest, TwoFactorCode
+from .serializers import UserSerializer, ProfileSerializer, FriendSerializer, FriendRequestSerializer, TokenWith2FASerializer
 from django.middleware.csrf import get_token
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from django.utils.timezone import now
+from django.core.mail import send_mail
+from django.core.cache import cache
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework.permissions import AllowAny
 
 logger = logging.getLogger('django')
 
+### Utility Functions ###
+
+def create_tokens(user, two_fa_status=False):
+    """
+    Generate JWT tokens with a 2FA status claim.
+    """
+    refresh = RefreshToken.for_user(user)
+    refresh['2fa_status'] = two_fa_status
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+def generate_otp(user):
+    """
+    Generates a One-Time Password (OTP) for 2FA.
+    """
+    otp, _ = TwoFactorCode.objects.get_or_create(user=user)
+    otp.code = get_random_string(length=6, allowed_chars='0123456789')
+    otp.timestamp = now()
+    otp.save()
+    logger.info(f"Generated OTP for {user.username}: {otp.code}")
+    send_email_code(user, otp.code)
+
+def send_email_code(user, otp_code):
+    """
+    Sends an email with the OTP code.
+    """
+    subject = "Your OTP Code"
+    message = f"Hello {user.username},\n\nYour OTP code is {otp_code}. It is valid for 5 minutes."
+    send_mail(subject, message, "no-reply@example.com", [user.email])
+
+
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def signup_view(request):
     logger.info("Signup request received.")
     username = request.data.get('username')
@@ -45,23 +84,87 @@ def signup_view(request):
         return Response({"error": "An error occurred during signup."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
     user = authenticate(request, username=username, password=password)
 
-    if user is not None:
-        login(request, user)
-        return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
+    if user:
+        if user.profile.twoFA_active:
+            generate_otp(user)
+            return Response({
+                "message": "2FA required. OTP sent to your email.",
+                "two_fa_required": True,
+                "username": user.username
+            }, status=status.HTTP_200_OK)
 
-    return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        # If 2FA is not required, issue JWT tokens
+        tokens = create_tokens(user, two_fa_status=True)
+        login(request, user)
+        return Response({
+            "message": "Login successful.",
+            "tokens": tokens
+        }, status=status.HTTP_200_OK)
+
+    return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['POST'])
+@login_required
+def verify_2fa(request):
+    otp_code = request.data.get('otp')
+    attempts_key = f"otp_attempts_{request.user.id}"
+
+    if not otp_code:
+        return Response({"error": "OTP code is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    otp_record = TwoFactorCode.objects.filter(user=request.user, code=otp_code).first()
+
+    if not otp_record:
+        cache.incr(attempts_key)
+        cache.expire(attempts_key, 300)
+        return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if otp_record.is_valid():
+        otp_record.delete()
+        cache.delete(attempts_key)
+
+        tokens = create_tokens(request.user, two_fa_status=True)
+
+        return Response({
+            "message": "2FA verification successful.",
+            "tokens": tokens
+        }, status=status.HTTP_200_OK)
+
+    return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def logout_view(request):
+    tokens = RefreshToken(request.data.get('refresh'))
+    tokens.blacklist()
     logout(request)
     return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token(request):
+    """
+    Refreshes the access token using the refresh token.
+    """
+    refresh_token = request.data.get("refresh")
+    if not refresh_token:
+        return Response({"error": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        refresh = RefreshToken(refresh_token)
+        access_token = str(refresh.access_token)
+        return Response({"access": access_token}, status=status.HTTP_200_OK)
+    except TokenError:
+        return Response({"error": "Invalid or expired refresh token"}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def profile_view(request):
     if not request.user.is_authenticated:
         return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -103,6 +206,40 @@ def upload_avatar(request):
         profile.avatar.save(file.name, file, save=True)
         return Response({'message': 'Avatar updated successfully'}, status=status.HTTP_200_OK)
     return Response({'error': 'No avatar provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@login_required
+def toggle_2fa(request):
+    enable = request.data.get('enable', False)
+    profile = request.user.profile
+
+    if enable:
+        generate_otp(request.user)
+        profile.twoFA_active = True
+        profile.save()
+        return Response({"message": "2FA enabled. OTP sent to your email."}, status=status.HTTP_200_OK)
+
+    else:
+        profile.twoFA_active = False
+        TwoFactorCode.objects.filter(user=request.user).delete()  # Clear any active OTPs
+        profile.save()
+        return Response({"message": "2FA disabled."}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@login_required
+def resend_otp(request):
+    user = request.user
+    otp_record = TwoFactorCode.objects.filter(user=user).first()
+
+    if otp_record and (now() - otp_record.timestamp).seconds < 30:
+        return Response({"error": "Please wait before requesting another OTP."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+    try:
+        generate_otp(user)
+        return Response({"message": "New OTP sent to your email."}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": f"Failed to resend OTP: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class FriendActionsViewSet(viewsets.ViewSet):
     """Manage friend operations (list, add, remove)."""

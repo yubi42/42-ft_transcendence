@@ -1,4 +1,4 @@
-import { getCSRFToken, logout} from './auth.js';
+import { getCSRFToken, logout, getRefreshToken, getAccessToken, removeTokens} from './auth.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     fetchProfileData();
@@ -53,52 +53,92 @@ function updateFriendsList(friends) {
     });
 }
 
+export async function refreshAccessToken() {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+        const response = await fetch('/user-api/refresh-token/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh: refreshToken }),
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            removeTokens();
+            return false;
+        }
+
+        const data = await response.json();
+        if (data.access) {
+            localStorage.setItem('accessToken', data.access);
+            return true;
+        }
+
+        return false;
+    } catch (error) {
+        console.error('Error refreshing access token:', error);
+        return false;
+    }
+}
 
 function fetchProfileData() {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.error("No access token found");
+        return;
+    }
+
     fetch('/user-api/profile/', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
+            'Authorization': `Bearer ${accessToken}`,
         },
         credentials: 'include',
     })
     .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error('Failed to fetch profile data');
+        if (response.status === 401) {
+            return refreshAccessToken().then((success) => {
+                if (success) return fetchProfileData();
+                else throw new Error('Unauthorized');
+            });
         }
+        return response.json();
     })
     .then(data => {
-        document.getElementById('username').textContent = data.user.username;
-        document.getElementById('display-name').textContent = data.display_name;
-        document.getElementById('wins').textContent = data.stats["games-wins"];
-        document.getElementById('losses').textContent = data.stats["games-losses"];
-		document.getElementById('draws').textContent = data.stats["games-draws"];
-		document.getElementById('ranking-score').textContent = data.stats["ranking-score"];
-		document.getElementById('games-played').textContent = data.stats["games-played"];
-        if (data.avatar_url) {
-            document.getElementById('avatar').src = data.avatar_url;
-        }
-        updateFriendsList(data.friends);
+        console.log("Profile Data:", data);
     })
     .catch(error => {
         console.error('Error fetching profile data:', error);
-        alert('Error loading profile information.');
     });
 }
 
+
 async function fetchFriends() {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
+
     try {
-        const response = await fetch('/user-api/friends/list/', {
+        let response = await fetch('/user-api/friends/list/', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
                 'X-CSRFToken': getCSRFToken(),
             },
             credentials: 'include',
         });
+
+        if (response.status === 401) {
+            console.warn("Unauthorized. Refreshing token...");
+            const refreshed = await refreshAccessToken();
+            if (refreshed) return fetchFriends();
+        }
 
         if (!response.ok) throw new Error(`Error fetching friends: ${response.status}`);
 
@@ -151,15 +191,28 @@ async function addFriend() {
         return;
     }
 
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
+
     try {
-        const response = await fetch(`/user-api/friends/add/${friendUsername}/`, {
+        let response = await fetch(`/user-api/friends/add/${friendUsername}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
                 'X-CSRFToken': getCSRFToken(),
             },
             credentials: 'include',
         });
+
+        if (response.status === 401) {
+            console.warn("Unauthorized. Refreshing token...");
+            const refreshed = await refreshAccessToken();
+            if (refreshed) return addFriend(); // Retry
+        }
 
         const data = await response.json();
         if (response.ok) {
@@ -177,15 +230,28 @@ async function addFriend() {
 async function removeFriend(username) {
     if (!confirm(`Are you sure you want to remove ${username} from your friends?`)) return;
 
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
+
     try {
-        const response = await fetch(`/user-api/friends/remove/${username}/`, {
+        let response = await fetch(`/user-api/friends/remove/${username}/`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
                 'X-CSRFToken': getCSRFToken(),
             },
             credentials: 'include',
         });
+
+        if (response.status === 401) {
+            console.warn("Unauthorized. Refreshing token...");
+            const refreshed = await refreshAccessToken();
+            if (refreshed) return removeFriend(username); // Retry
+        }
 
         const data = await response.json();
         if (response.ok) {
@@ -200,14 +266,22 @@ async function removeFriend(username) {
     }
 }
 
+
 async function blockFriend(username) {
     if (!confirm(`Are you sure you want to block ${username}? This action cannot be undone.`)) return;
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
 
     try {
         const response = await fetch(`/user-api/block-user/${username}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
                 'X-CSRFToken': getCSRFToken(),
             },
             credentials: 'include',
@@ -243,59 +317,73 @@ function getGameStatus(score, playerIdx){
 }
 
 async function fetchMatchHistory() {
-	const tableBody = document.getElementById('match-history-body');
-	try {
-	const response = await fetch('/user-api/game-history?' +
-		new URLSearchParams({limit: '10'}).toString(),{
-			method: 'GET',
-			headers: {
-                'Content-Type': 'application/json',
-				'X-CSRFToken': getCSRFToken()
-            },
-			credentials: 'include',
-		});
-		if (!response.ok) {
-            console.error('Failed to fetch match history:', response.status);
-            return;
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
+
+    const tableBody = document.getElementById('match-history-body');
+    try {
+        let response = await fetch('/user-api/game-history?' +
+            new URLSearchParams({ limit: '10' }).toString(), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                credentials: 'include',
+            });
+
+        if (response.status === 401) {
+            console.warn("Unauthorized. Refreshing token...");
+            const refreshed = await refreshAccessToken();
+            if (refreshed) return fetchMatchHistory(); // Retry
         }
-		const json = await response.json();
-		const games = json.results;
-		tableBody.innerHTML = '';
-		games.forEach(game => {
-			const row = document.createElement('tr');
 
-			const dateCell = document.createElement('td');
-			dateCell.textContent = new Date(game.dateTime).toLocaleString();
-			row.appendChild(dateCell);
+        if (!response.ok) throw new Error(`Failed to fetch match history: ${response.status}`);
 
-			const gameModeCell = document.createElement('td');
-			gameModeCell.textContent = game.gameMode;
-			row.appendChild(gameModeCell);
+        const json = await response.json();
+        const games = json.results;
+        tableBody.innerHTML = '';
 
-			const opponentCell = document.createElement('td');
-			const scoreCell = document.createElement('td');
-			let gameStatusCell;
-			const username = document.getElementById('username').textContent;
-			if (game.players[0] == username){
-				opponentCell.textContent = game.players[1];
-				scoreCell.textContent = game.score[0].toString() + '-' + game.score[1].toString();
-				gameStatusCell = getGameStatus(game.score, 0);
-			} else if (game.players[1] == username) {
-				opponentCell.textContent = game.players[0];
-				scoreCell.textContent = game.score[1].toString() + '-' + game.score[0].toString();
-				gameStatusCell = getGameStatus(game.score, 1);
-			} else {
-				console.error(`Game with id ${game.id} can\'t be connected to current user: ${username}. PLAYERS: ${game.players[0]}, ${game.players[1]}`);
-			}
-			row.appendChild(opponentCell);
-			row.appendChild(scoreCell);
-			row.appendChild(gameStatusCell);
+        games.forEach(game => {
+            const row = document.createElement('tr');
 
-			tableBody.appendChild(row);
-		})
-	} catch (error) {
-		console.error(error.message);
-	}
+            const dateCell = document.createElement('td');
+            dateCell.textContent = new Date(game.dateTime).toLocaleString();
+            row.appendChild(dateCell);
+
+            const gameModeCell = document.createElement('td');
+            gameModeCell.textContent = game.gameMode;
+            row.appendChild(gameModeCell);
+
+            const opponentCell = document.createElement('td');
+            const scoreCell = document.createElement('td');
+            let gameStatusCell;
+            const username = document.getElementById('username').textContent;
+
+            if (game.players[0] == username) {
+                opponentCell.textContent = game.players[1];
+                scoreCell.textContent = game.score[0].toString() + '-' + game.score[1].toString();
+                gameStatusCell = getGameStatus(game.score, 0);
+            } else if (game.players[1] == username) {
+                opponentCell.textContent = game.players[0];
+                scoreCell.textContent = game.score[1].toString() + '-' + game.score[0].toString();
+                gameStatusCell = getGameStatus(game.score, 1);
+            } else {
+                console.error(`Game with id ${game.id} can't be connected to current user: ${username}. PLAYERS: ${game.players[0]}, ${game.players[1]}`);
+            }
+
+            row.appendChild(opponentCell);
+            row.appendChild(scoreCell);
+            row.appendChild(gameStatusCell);
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error(error.message);
+    }
 }
 
 function uploadAvatar(event) {
@@ -329,15 +417,28 @@ function uploadAvatar(event) {
 }
 
 async function fetchPendingRequests() {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
+
     try {
-        const response = await fetch('/user-api/friend-requests/pending/', {
+        let response = await fetch('/user-api/friend-requests/pending/', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
                 'X-CSRFToken': getCSRFToken(),
             },
             credentials: 'include',
         });
+
+        if (response.status === 401) {
+            console.warn("Unauthorized. Refreshing token...");
+            const refreshed = await refreshAccessToken();
+            if (refreshed) return fetchPendingRequests(); // Retry
+        }
 
         if (!response.ok) throw new Error('Failed to fetch pending requests.');
 
@@ -351,12 +452,19 @@ async function fetchPendingRequests() {
 
 
 async function acceptFriendRequest(requestId) {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
+
     try {
         const response = await fetch(`/user-api/friend-requests/accept/${requestId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
+                'Authorization': `Bearer ${accessToken}`,
+                'X-CSRFToken': getCSRFToken(),
             },
             credentials: 'include',
         });
@@ -372,13 +480,21 @@ async function acceptFriendRequest(requestId) {
     }
 }
 
+
 async function declineFriendRequest(requestId) {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.warn("No access token found.");
+        return;
+    }
+
     try {
         const response = await fetch(`/user-api/friend-requests/decline/${requestId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
+                'Authorization': `Bearer ${accessToken}`,
+                'X-CSRFToken': getCSRFToken(),
             },
             credentials: 'include',
         });
@@ -392,6 +508,7 @@ async function declineFriendRequest(requestId) {
         alert(error.message);
     }
 }
+
 
 function displayPendingRequests(requests) {
     const requestsList = document.getElementById('pending-requests');
