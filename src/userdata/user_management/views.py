@@ -114,27 +114,36 @@ def login_view(request):
 @permission_classes([AllowAny])
 def verify_2fa(request):
     otp_code = request.data.get('otp')
-    username = request.data.get('username')
+    username = request.data.get('username')  # ✅ Expecting username
 
     if not otp_code or not username:
+        print(f"DEBUG: Missing OTP or Username -> OTP: {otp_code}, Username: {username}")
         return Response({"error": "OTP code and username are required."}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.filter(username=username).first()
     if not user:
+        print(f"DEBUG: No user found for username: {username}")
         return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
     otp_record = TwoFactorCode.objects.filter(user=user, code=otp_code).first()
 
-    if not otp_record or not otp_record.is_valid():
-        return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+    if not otp_record:
+        print(f"DEBUG: Invalid OTP entered for user {username}: {otp_code}")
+        return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not otp_record.is_valid():
+        print(f"DEBUG: Expired OTP for user {username}: {otp_code}")
+        return Response({"error": "Expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
     otp_record.delete()
     tokens = create_tokens(user, two_fa_status=True)
 
+    print(f"DEBUG: 2FA Verification Successful for {username}")
     return Response({
         "message": "2FA verification successful.",
         "tokens": tokens
     }, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @login_required
@@ -208,7 +217,7 @@ def update_profile_view(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
-@login_required
+@permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def upload_avatar(request):
     profile = get_object_or_404(Profile, user=request.user)

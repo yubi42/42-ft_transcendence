@@ -58,6 +58,7 @@ async function checkAuthentication() {
             console.warn("Unauthorized: Trying token refresh...");
             const refreshed = await refreshAccessToken();
             if (refreshed) return checkAuthentication();
+            document.getElementById('sign-background').classList.add('active');
             document.getElementById('sign').classList.add('active');
             document.getElementById('login-form').classList.add('active');
             document.getElementById('login-button').style.display = 'inline-block';

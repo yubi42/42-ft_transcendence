@@ -25,6 +25,8 @@ export async function postAPI(url, data, authRequired = false) {
         }
     }
 
+    console.log("DEBUG: Sending request to", url, "with data:", data);
+
     let response = await fetch(url, {
         method: 'POST',
         headers: headers,
@@ -45,10 +47,15 @@ export async function postAPI(url, data, authRequired = false) {
         }
     }
 
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
+    if (!response.ok) {
+        console.error(`ERROR: ${url} failed with status ${response.status}`);
+        const errorData = await response.json();
+        console.error("ERROR DATA:", errorData);
+        throw new Error(`Error: ${response.status}`);
+    }
+
     return response.json();
 }
-
 
 export async function login(event) {
     event.preventDefault();
@@ -78,8 +85,10 @@ export async function verify2FA(event, username) {
     const formData = new FormData(event.target);
     const otp = formData.get('otp');
 
+    console.log("DEBUG: Submitting OTP for verification", otp, "Username:", username);
+
     try {
-        const response = await postAPI('/user-api/2fa/verify/', { otp, username });  // ✅ Send username
+        const response = await postAPI('/user-api/2fa/verify/', { otp, username });
 
         if (response.tokens) {
             saveTokens(response.tokens);
@@ -93,7 +102,6 @@ export async function verify2FA(event, username) {
         alert('2FA verification failed: ' + error.message);
     }
 }
-
 
 export async function resendOTP(event) {
     event.preventDefault();

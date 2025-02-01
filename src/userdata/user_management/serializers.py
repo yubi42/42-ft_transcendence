@@ -26,7 +26,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['user', 'display_name', 'avatar_url', 'stats']
 
-
     def get_avatar_url(self, obj):
         if obj.avatar:
             return obj.avatar.url

@@ -19,5 +19,4 @@ urlpatterns = [
     path('2fa/verify/', views.verify_2fa, name='verify_2fa'),
     path('2fa/resend-otp/', views.resend_otp, name='resend_otp'),
     path('2fa/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-	#path('game-history/', views.add_friend_view, name='game_history')
 ]

@@ -431,34 +431,46 @@ async function fetchMatchHistory() {
     }
 }
 
-
-function uploadAvatar(event) {
+async function uploadAvatar(event) {
     const file = event.target.files[0];
-    if (file) {
-        const formData = new FormData();
-        formData.append('avatar', file);
+    if (!file) {
+        alert('No file selected.');
+        return;
+    }
 
-        fetch('/user-api/upload-avatar/', {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const accessToken = getAccessToken();
+
+    try {
+        let response = await fetch('/user-api/upload-avatar/', {
             method: 'POST',
             body: formData,
             credentials: 'include',
             headers: {
+                'Authorization': `Bearer ${accessToken}`,
                 'X-CSRFToken': getCSRFToken()
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.message) {
-                document.getElementById('avatar').src = window.URL.createObjectURL(file);
-                alert('Avatar uploaded successfully!');
-            } else {
-                throw new Error(data.error || 'Failed to upload avatar');
-            }
-        })
-        .catch(error => {
-            console.error('Error uploading avatar:', error);
-            alert(error.message);
         });
+
+        if (response.status === 401) {
+            console.warn("Unauthorized. Refreshing token...");
+            const refreshed = await refreshAccessToken();
+            if (refreshed) return uploadAvatar(event);
+        }
+
+        const data = await response.json();
+
+        if (data.message) {
+            document.getElementById('avatar').src = window.URL.createObjectURL(file);
+            alert('Avatar uploaded successfully!');
+        } else {
+            throw new Error(data.error || 'Failed to upload avatar');
+        }
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        alert(error.message);
     }
 }
 
@@ -501,8 +513,6 @@ async function fetchPendingRequests() {
     }
 }
 
-
-
 async function declineFriendRequest(requestId) {
     const accessToken = getAccessToken();
     if (!accessToken) {
@@ -530,7 +540,6 @@ async function declineFriendRequest(requestId) {
         alert(error.message);
     }
 }
-
 
 function displayPendingRequests(requests) {
     const requestsList = document.getElementById('pending-requests');
