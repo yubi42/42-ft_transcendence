@@ -42,33 +42,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
 export async function refreshAccessToken() {
     const refreshToken = getRefreshToken();
-    if (!refreshToken) return false;
+    if (!refreshToken) {
+        console.warn("🚨 No refresh token found.");
+        return false;
+    }
 
     try {
-        const response = await fetch('/user-api/2fa/refresh-token/', {
+        const response = await fetch('/user-api/token/refresh/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ refresh: refreshToken }),
-            credentials: 'include',
         });
 
         if (!response.ok) {
-            removeTokens();
+            console.error("Refresh token invalid or expired.");
             return false;
         }
 
         const data = await response.json();
-        if (data.access) {
-            localStorage.setItem('accessToken', data.access);
-            return true;
-        }
-
-        return false;
+        saveTokens(data);
+        console.log("Access token refreshed.");
+        return true;
     } catch (error) {
-        console.error('Error refreshing access token:', error);
+        console.error("Token refresh failed:", error);
         return false;
     }
 }
+
 
 function fetchProfileData() {
     const accessToken = getAccessToken();
@@ -96,6 +98,9 @@ function fetchProfileData() {
     })
     .then(data => {
         console.log("Profile Data:", data);
+
+        document.getElementById('username').textContent = data.username || "Unknown User";
+        document.getElementById('display-name').textContent = data.display_name || "No display name set";
 
         const twoFAToggle = document.getElementById('two-fa-toggle');
         const twoFAStatus = document.getElementById('two-fa-status');

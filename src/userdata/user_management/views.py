@@ -28,8 +28,6 @@ from django.conf import settings
 
 logger = logging.getLogger('django')
 
-### Utility Functions ###
-
 def create_tokens(user, two_fa_status=False):
     """
     Generate JWT tokens with a 2FA status claim.
@@ -42,9 +40,7 @@ def create_tokens(user, two_fa_status=False):
     }
 
 def generate_otp(user):
-    """
-    Generates a One-Time Password (OTP) for 2FA.
-    """
+
     otp, _ = TwoFactorCode.objects.get_or_create(user=user)
     otp.code = get_random_string(length=6, allowed_chars='0123456789')
     otp.timestamp = now()
@@ -100,7 +96,6 @@ def login_view(request):
                 "username": user.username
             }, status=status.HTTP_200_OK)
 
-        # If 2FA is not required, issue JWT tokens
         tokens = create_tokens(user, two_fa_status=True)
         login(request, user)
         return Response({
@@ -114,7 +109,7 @@ def login_view(request):
 @permission_classes([AllowAny])
 def verify_2fa(request):
     otp_code = request.data.get('otp')
-    username = request.data.get('username')  # ✅ Expecting username
+    username = request.data.get('username')
 
     if not otp_code or not username:
         print(f"DEBUG: Missing OTP or Username -> OTP: {otp_code}, Username: {username}")
@@ -126,7 +121,6 @@ def verify_2fa(request):
         return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
     otp_record = TwoFactorCode.objects.filter(user=user, code=otp_code).first()
-
     if not otp_record:
         print(f"DEBUG: Invalid OTP entered for user {username}: {otp_code}")
         return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
@@ -169,9 +163,6 @@ def logout_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh_token(request):
-    """
-    Refreshes the access token using the refresh token.
-    """
     refresh_token = request.data.get("refresh")
     if not refresh_token:
         return Response({"error": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -186,20 +177,23 @@ def refresh_token(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def profile_view(request):
-    if not request.user.is_authenticated:
-        return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+    user = request.user
 
     try:
-        profile = get_object_or_404(Profile.objects.select_related('user'), user=request.user)
+        profile = get_object_or_404(Profile.objects.select_related('user'), user=user)
         serializer = ProfileSerializer(profile)
         data = serializer.data
         data['csrf_token'] = get_token(request)
+
+        data['username'] = user.username
+        data['display_name'] = profile.display_name if hasattr(profile, 'display_name') else user.username
+
         return Response(data, status=status.HTTP_200_OK)
     except Profile.DoesNotExist:
         return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
-@login_required
+@permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def update_profile_view(request):
     profile = get_object_or_404(Profile, user=request.user)
@@ -220,12 +214,17 @@ def update_profile_view(request):
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def upload_avatar(request):
+    if not request.user.is_authenticated:
+        return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
     profile = get_object_or_404(Profile, user=request.user)
     file = request.FILES.get('avatar')
-    if file:
-        profile.avatar.save(file.name, file, save=True)
-        return Response({'message': 'Avatar updated successfully'}, status=status.HTTP_200_OK)
-    return Response({'error': 'No avatar provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not file:
+        return Response({'error': 'No avatar provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    profile.avatar.save(file.name, file, save=True)
+    return Response({'message': 'Avatar updated successfully'}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @login_required
@@ -245,13 +244,18 @@ def toggle_2fa(request):
         return Response({"message": "2FA disabled."}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@login_required
+@permission_classes([AllowAny])
 def resend_otp(request):
-    user = request.user
-    otp_record = TwoFactorCode.objects.filter(user=user).first()
+    username = request.data.get("username")
 
-    if otp_record and (now() - otp_record.timestamp).seconds < 30:
-        return Response({"error": "Please wait before requesting another OTP."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    if not username:
+        return Response({"error": "Username is required to resend OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects.filter(username=username).first()
+    if not user:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    otp_record = TwoFactorCode.objects.filter(user=user).first()
 
     try:
         generate_otp(user)

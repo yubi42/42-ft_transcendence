@@ -1,5 +1,6 @@
 import { showLoginForm } from './dom-utils.js';
 import { unsetName } from './globals.js';
+import { refreshAccessToken } from './profile.js';
 
 export function getCSRFToken() {
     let csrfToken = null;
@@ -105,23 +106,49 @@ export async function verify2FA(event, username) {
 
 export async function resendOTP(event) {
     event.preventDefault();
+
+    const username = localStorage.getItem('pendingUsername');
+    if (!username) {
+        console.error("🚨 No username found in localStorage for resending OTP.");
+        alert("Error: Username not available.");
+        return;
+    }
+
+    console.log("🛠 DEBUG: Sending OTP request for username:", username);
+
     try {
-        const response = await postAPI('/user-api/2fa/resend-otp/', {});
-        if (response.message) {
-            alert('A new OTP has been sent to your email.');
-        } else {
-            alert(response.error || 'Failed to resend OTP.');
+        const response = await fetch('/user-api/2fa/resend-otp/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username })
+        });
+
+        console.log("🛠 DEBUG: Resend OTP Response Status:", response.status);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("🚨 Resend OTP API Error:", errorData);
+            throw new Error(errorData.error || 'Failed to resend OTP.');
         }
+
+        alert('✅ A new OTP has been sent to your email.');
     } catch (error) {
-        console.error('Resend OTP error:', error);
-        alert('Failed to resend OTP: ' + error.message);
+        console.error('🚨 Resend OTP error:', error);
+        alert(error.message || 'Failed to resend OTP.');
     }
 }
 
 export function show2FAForm(username) {
+    localStorage.setItem('pendingUsername', username);
+
     const mainContent = document.querySelector('body');
     mainContent.innerHTML = `
         <h1>Verify OTP</h1>
+        <p>Username: <span>${username}</span></p>  <!-- No id needed -->
         <form id="2fa-form">
             <input type="text" name="otp" placeholder="Enter OTP" required>
             <button type="submit">Verify</button>
