@@ -48,7 +48,7 @@
             <h2>Create a Lobby:</h2>
             <div>
               <label for="lobby-name">Lobby Name:</label>
-              <input type="text" id="lobby-name" name="lobby_name" required>
+              <input type="text" id="lobby-name" name="lobby-name" required>
             </div>
             <div>
               <div id="mode-options">
@@ -102,18 +102,36 @@
             <button type="submit">Create</button>
           </form>
           <div class="online" id="tournament">
-            <div>
-              <button class="player_button" id="p1"><p>P1</p></button>
-              <button class="player_button" id="p2"><p>P2</p></button>
-              <button class="player_button" id="p3"><p>P3</p></button>
-              <button class="player_button" id="p4"><p>P4</p></button>
+            <div id="tournament-prep">
+              <h2 id="tournament-header">Tournament: </h2>
+              <h3 id="players-header">Players: </h3>
+              <div id="player-container"></div>
             </div>
-            <div>
-              <button class="player_button" id="p5"><p>P5</p></button>
-              <button class="player_button" id="p6"><p>P6</p></button>
-              <button class="player_button" id="p7"><p>P7</p></button>
-              <button class="player_button" id="p8"><p>P8</p></button>
+            <div id="tournament-container" class="disable">
+              <div>
+                <div>
+                  <button class="player_button" id="p1-round1">Name 1</button>
+                  <button id="start-1">Start</button>
+                  <button class="player_button" id="p2-round1">Name 2</button>
+                </div>
+                <div>
+                  <button class="player_button" id="p3-round1">Name 3</button>
+                  <button id="start-2">Start</button>
+                  <button class="player_button" id="p4-round1">Name 4</button>
+                </div>
+              </div>
+              <div>
+                <div>
+                  <button class="player_button" id="p3-round1">Name 3</button>
+                  <button class="player_button" id="start-2">Start</button>
+                  <button class="player_button" id="p4-round1">Name 4</button>
+                </div>
+              </div>
+              <div>
+
+              </div>
             </div>
+            <button class="start_button" id="start_tournament">Start Tournament</button>
           </div>
           <div class="online" id="lobby">
             <h2 id="lobby-header">Lobby: </h2>
