@@ -1,4 +1,4 @@
-import { getCSRFToken } from './auth.js';
+import { getAccessToken } from './auth.js';
 import { joinLobby, joinLocalLobby } from './lobby-handling.js';
 import { joinTournament, joinLocalTournament } from './tournament_handler.js';
 
@@ -45,7 +45,7 @@ function createLobby(event)
     {
       method: 'POST',
       headers: {
-        'X-CSRFToken': getCSRFToken(),
+        'Authorization': `Bearer ${getAccessToken()}`,
       },
       credentials: 'include',
       body: formData,

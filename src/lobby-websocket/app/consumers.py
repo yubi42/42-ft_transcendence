@@ -14,15 +14,15 @@ class LobbyConsumer(AsyncWebsocketConsumer):
         self.roles = {"p1": None, "p2": None, "p3": None}
 
         self.cookies = self.scope.get('cookies', {})
-        self.csrf_token = self.cookies.get('csrftoken', None)
+        self.token = self.scope.get("subprotocols", [None])[1]
 
-        if self.csrf_token:
+        if self.token:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     "http://nginx:80/user-api/profile/",
                     headers={
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': self.csrf_token,
+                        'Authorization': f'Bearer {self.token}',
                     },
                     cookies=self.cookies,
                 )
@@ -58,10 +58,10 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                     }
                 )
             
-            await self.channel_layer.group_discard(
-                self.lobby_group_name,
-                self.channel_name
-            )
+        await self.channel_layer.group_discard(
+            self.lobby_group_name,
+            self.channel_name
+        )
 
     async def receive(self, text_data):
         # Handle messages from the WebSocket
@@ -220,7 +220,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                     url,
                     headers={
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': self.csrf_token,
+                        'Authorization': self.token,
                     },
                     cookies=self.cookies,
                 )

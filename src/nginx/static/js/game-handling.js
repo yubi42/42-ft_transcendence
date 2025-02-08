@@ -1,4 +1,3 @@
-import { getCSRFToken } from "./auth.js";
 import { drawGame2d, drawGame3d } from "./drawPongGame.js";
 import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./globals.js";
 

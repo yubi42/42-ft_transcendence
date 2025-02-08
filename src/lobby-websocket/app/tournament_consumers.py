@@ -48,15 +48,16 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         self.roles = {"p1": None, "p2": None, "p3": None, "p4": None}
 
         self.cookies = self.scope.get('cookies', {})
+        self.token = self.scope.get("subprotocols", [None])[0]
         self.csrf_token = self.cookies.get('csrftoken', None)
 
-        if self.csrf_token:
+        if self.token:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     "http://nginx:80/user-api/profile/",
                     headers={
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': self.csrf_token,
+                        'Authorization': self.token,
                     },
                     cookies=self.cookies,
                 )
@@ -348,7 +349,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     url,
                     headers={
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': self.csrf_token,
+                        'X-CSRFToken': self.token,
                     },
                     cookies=self.cookies,
                 )

@@ -1,7 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync
 # from .signals import game_update_signal, game_init_signal, game_end_signal
-import asyncio, time, json, math
+import asyncio, time, json, math, httpx
 # import logging
 # logger = logging.getLogger(__name__)
 
@@ -84,6 +84,28 @@ class PacPongGameLocal(AsyncWebsocketConsumer):
 		self.lobby_id = self.scope['url_route']['kwargs']['lobby_id']
 		self.max_score = int(self.scope['url_route']['kwargs']['max_score'])
 		self.lobby_group_name = f"lobby_{self.lobby_id}"
+		self.cookies = self.scope.get('cookies', {})
+		self.token = self.scope.get("subprotocols", [None])[1]
+		self.csrf_token = self.cookies.get('csrftoken', None)
+		self.game_session = None
+
+		if self.token:
+			async with httpx.AsyncClient() as client:
+				response = await client.get(
+                    "http://nginx:80/user-api/profile/",
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Authorization': f'Bearer {self.token}',
+						'X-CSRFToken': self.csrf_token,
+                    },
+                    cookies=self.cookies,
+                )
+				if response.status_code != 200:
+					await self.close(code=4001)
+					return
+		else:
+			await self.close(code=4001)
+			return
 		
 		await self.accept()
 		
@@ -205,7 +227,7 @@ class PacPongGameLocal(AsyncWebsocketConsumer):
 
 	async def disconnect(self, close_code):
 		# This is called when the WebSocket connection is closed
-		if close_code != 4001:
+		if self.game_session is not None:
 			self.game_session.player_count -= 1
 			if self.lobby_group_name in self.GameSessions:
 				del self.GameSessions[self.lobby_group_name]

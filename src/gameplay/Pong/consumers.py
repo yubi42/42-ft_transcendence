@@ -67,14 +67,17 @@ class PongGame(AsyncWebsocketConsumer):
 		self.lobby_group_name = f"lobby_{self.lobby_id}"
 		self.cookies = self.scope.get('cookies', {})
 		self.csrf_token = self.cookies.get('csrftoken', None)
+		self.token = self.scope.get("subprotocols", [None])[1]
+		self.game_session = None
 
-		if self.csrf_token:
+		if self.token:
 			async with httpx.AsyncClient() as client:
 				response = await client.get(
                     "http://nginx:80/user-api/profile/",
                     headers={
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': self.csrf_token,
+                        'Authorization': f'Bearer {self.token}',
+						'X-CSRFToken': self.csrf_token,
                     },
                     cookies=self.cookies,
 				)
@@ -167,7 +170,7 @@ class PongGame(AsyncWebsocketConsumer):
 
 	async def disconnect(self, close_code):
 		# This is called when the WebSocket connection is closed
-		if close_code != 4001:
+		if self.game_session is not None:
 			self.game_session.player_count -= 1
 			# logger.debug("self.game_session.streaming: %s", self.game_session.streaming)
 			if self.game_session.player_count == 0:
@@ -188,11 +191,11 @@ class PongGame(AsyncWebsocketConsumer):
 				   					},
         	    				headers={
         	    				    'Content-Type': 'application/json',
-        	    				    'X-CSRFToken': self.csrf_token,  # Pass the CSRF token in the header
+                        			'Authorization': f'Bearer {self.token}',
+        	    				    'X-CSRFToken': self.token,
         	    				},
-        	    				cookies={  # If the CSRF token is associated with a session cookie
-        	    				    'csrftoken': self.csrf_token
-        	    				})
+        	    				cookies=self.cookies,
+								)
 				# if response.status_code != 201:
 				# 	logger.debug(f"Failed to send score")
 					# return

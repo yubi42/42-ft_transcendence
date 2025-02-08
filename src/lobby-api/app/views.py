@@ -27,7 +27,7 @@ def create_lobby(request):
             "http://nginx:80/user-api/profile/",
             headers = {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': request.headers.get('X-CSRFToken'),
+                'Authorization': request.headers.get('Authorization'),
             },
             cookies=request.COOKIES
         )
@@ -163,7 +163,7 @@ def delete_lobby_entry(request, lobby_id):
             "http://nginx:80/user-api/profile/",
             headers = {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': csrf_token,
+                'Authorization': request.headers.get('Authorization'),
             },
             cookies=request.COOKIES
         )
