@@ -1,5 +1,6 @@
 import { getCSRFToken } from "./auth.js";
 import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./globals.js";
+import { drawGame2d, drawGame3d } from "./drawPongGame.js";
 
 export function startGame(lobby_id, player, player_count, roles, max_score)
 {
@@ -218,40 +219,4 @@ function drawGame(data, gameSettings, roles)
     gameSettings.scoreBoard.textContent = `P1 : ${roles.p1} : ${data.Lscore} | ${data.Rscore} : ${roles.p2} : P2`;
   else
     gameSettings.scoreBoard.textContent = `P1 : ${data.Lscore} | ${data.Rscore} : P2`;
-}
-
-function drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY)
-{
-  const context = gameSettings.canvas.getContext(gameSettings.contextType);
-  context.clearRect(0, 0, gameSettings.canvas.width, gameSettings.canvas.height);
-  context.fillStyle = 'white';
-
-  // draw paddles
-  context.fillRect(0, paddleL, gameSettings.paddle_width, gameSettings.paddle_height);
-  context.fillRect(gameSettings.canvas.width - gameSettings.paddle_width, paddleR, gameSettings.paddle_width, gameSettings.paddle_height);
-
-  // draw ball
-  context.beginPath();
-  context.arc(ballX, ballY, gameSettings.ball_size / 2, 0, Math.PI * 2);
-  context.fill();
-
-}
-
-
-function drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY)
-{
-
-/* gameSettings.scoreBoard <-- gets updated in drawGame already
-gameSettings.canvas <-- canvas element 
-gameSettings.contextType <-- updates when the player clicks on 3d or 2d to toggle mode 
-gameSettings.paddle_width 
-gameSettings.paddle_height
-gameSettings.ball_size
-gameSettings.player <- says if the player is 'p1' or 'p2' we can adjust the camera depending on it.  
-
-paddleL <- y position of paddleL (x is as left as possible) aka 0 
-paddleR <- y position of paddleR (x is as right as possible) aka gameSettings.canvas.width - gameSettings.paddle_width
-ballX
-ballY
-*/
 }
