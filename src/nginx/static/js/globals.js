@@ -1,3 +1,4 @@
+import { getAccessToken } from "./auth.js";
 
 export let lobby_socket;
 
@@ -5,18 +6,27 @@ export let gameplay_socket;
 
 export let name;
 
+
+
 export function initLobbySocket(url)
 {
+  const accessToken = getAccessToken();
     if (!lobby_socket)
-        lobby_socket = new WebSocket(url);
+        lobby_socket = new WebSocket(url, ["Authorization", accessToken]);
     else
         console.warn("Lobby socket already initialized.");
 }
 
 export function initGameplaySocket(url)
 {
+  const accessToken = getAccessToken();
+  if (!accessToken)
+    console.log(`jess no token`);
+  else
+  console.log(`accessToken: ${accessToken}`);
+  gameplay_socket = null;
     if (!gameplay_socket)
-        gameplay_socket = new WebSocket(url);
+        gameplay_socket = new WebSocket(url, ["Authorization", accessToken]);
     else
         console.warn("Gameplaylocket socket already initialized.");
 }
