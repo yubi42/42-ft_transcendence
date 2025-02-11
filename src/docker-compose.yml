@@ -89,6 +89,7 @@ services:
       - ./nginx/static:/usr/share/nginx/html
 
   userdata:
+    container_name: userdata
     build:
       context: ./userdata/
       dockerfile: Dockerfile
@@ -105,6 +106,7 @@ services:
       - userdata-network
 
   userdata_db:
+    container_name: userdata_db
     image: postgres:15
     volumes:
       - userdata_db:/var/lib/postgresql/data/
