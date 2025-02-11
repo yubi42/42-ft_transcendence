@@ -1,3 +1,5 @@
+import { animate } from "./game_3d";
+
 
 export function drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY)
 {
@@ -17,4 +19,5 @@ export function drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY)
 }
 
 export function drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY) {
+  animate();
 }

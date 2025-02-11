@@ -251,7 +251,7 @@ function resetBall() {
 } */
 
 // Animation loop
-function animate() {
+export function animate() {
     controls.update();
     updateBall();
     renderer.render(scene, camera);
@@ -265,7 +265,6 @@ document.addEventListener('keydown', (event) => {
     if (event.key === 'a') movePlayer2Paddle(-1);
     if (event.key === 'd') movePlayer2Paddle(1);
 });
-animate();
 
 // Resize handling
 // function setLayout() {
