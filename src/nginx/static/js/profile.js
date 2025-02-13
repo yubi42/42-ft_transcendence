@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
 export async function refreshAccessToken() {
     const refreshToken = getRefreshToken();
     if (!refreshToken) {
-        console.warn("🚨 No refresh token found.");
+        // console.warn("🚨 No refresh token found.");
         return false;
     }
 
@@ -69,16 +69,16 @@ export async function refreshAccessToken() {
         });
 
         if (!response.ok) {
-            console.error("Refresh token invalid or expired.");
+            // console.error("Refresh token invalid or expired.");
             return false;
         }
 
         const data = await response.json();
         saveTokens(data);
-        console.log("Access token refreshed.");
+        // console.log("Access token refreshed.");
         return true;
     } catch (error) {
-        console.error("Token refresh failed:", error);
+        // console.error("Token refresh failed:", error);
         return false;
     }
 }
@@ -86,7 +86,7 @@ export async function refreshAccessToken() {
 function fetchProfileData() {
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.error("No access token found");
+        // console.error("No access token found");
         return;
     }
 
@@ -108,7 +108,7 @@ function fetchProfileData() {
         return response.json();
     })
     .then(data => {
-        console.log("Profile Data:", data);
+        // console.log("Profile Data:", data);
 
         document.getElementById('username').textContent = data.username || "Unknown User";
         document.getElementById('display-name').textContent = data.display_name || "No display name set";
@@ -130,7 +130,7 @@ function fetchProfileData() {
         document.getElementById('ranking-score').textContent = stats['two-player-pong']['ranking-score'] ?? "-";
     })
     .catch(error => {
-        console.error('Error fetching profile data:', error);
+        // console.error('Error fetching profile data:', error);
     });
 }
 
@@ -138,7 +138,7 @@ async function toggle2FA(event) {
     const enable2FA = event.target.checked;
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.warn("No access token found.");
+        // console.warn("No access token found.");
         return;
     }
 
@@ -165,7 +165,7 @@ async function toggle2FA(event) {
             alert("Two-Factor Authentication Disabled.");
         }
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         alert("Error updating 2FA.");
     }
 }
@@ -174,7 +174,7 @@ async function toggle2FA(event) {
 async function fetchFriends() {
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.warn("No access token found.");
+        // console.warn("No access token found.");
         return;
     }
 
@@ -190,7 +190,7 @@ async function fetchFriends() {
         });
 
         if (response.status === 401) {
-            console.warn("Unauthorized. Refreshing token...");
+            // console.warn("Unauthorized. Refreshing token...");
             const refreshed = await refreshAccessToken();
             if (refreshed) return fetchFriends();
         }
@@ -200,14 +200,14 @@ async function fetchFriends() {
         const friends = await response.json();
 
         if (!friends || friends.length === 0) {
-            console.warn("No friends found.");
+            // console.warn("No friends found.");
             document.getElementById('friends').innerHTML = '<p>No friends yet.</p>';
             return;
         }
 
         displayFriends(friends);
     } catch (error) {
-        console.error(error);
+        // console.error(error);
     }
 }
 
@@ -254,7 +254,7 @@ async function addFriend() {
 
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.warn("No access token found.");
+        // console.warn("No access token found.");
         return;
     }
 
@@ -270,7 +270,7 @@ async function addFriend() {
         });
 
         if (response.status === 401) {
-            console.warn("Unauthorized. Refreshing token...");
+            // console.warn("Unauthorized. Refreshing token...");
             const refreshed = await refreshAccessToken();
             if (refreshed) return addFriend(); // Retry
         }
@@ -283,7 +283,7 @@ async function addFriend() {
             throw new Error(data.message || 'Failed to add friend.');
         }
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         alert(error.message);
     }
 }
@@ -293,7 +293,7 @@ async function removeFriend(username) {
 
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.warn("No access token found.");
+        // console.warn("No access token found.");
         return;
     }
 
@@ -309,7 +309,7 @@ async function removeFriend(username) {
         });
 
         if (response.status === 401) {
-            console.warn("Unauthorized. Refreshing token...");
+            // console.warn("Unauthorized. Refreshing token...");
             const refreshed = await refreshAccessToken();
             if (refreshed) return removeFriend(username);
         }
@@ -322,7 +322,7 @@ async function removeFriend(username) {
             throw new Error(data.message || 'Failed to remove friend.');
         }
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         alert(error.message);
     }
 }
@@ -333,7 +333,7 @@ async function blockFriend(username) {
 
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.warn("No access token found.");
+        // console.warn("No access token found.");
         return;
     }
 
@@ -356,7 +356,7 @@ async function blockFriend(username) {
             throw new Error(data.message || 'Failed to block user.');
         }
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         alert(error.message);
     }
 }
@@ -385,7 +385,7 @@ async function uploadAvatar(event) {
         });
 
         if (response.status === 401) {
-            console.warn("Unauthorized. Refreshing token...");
+            // console.warn("Unauthorized. Refreshing token...");
             const refreshed = await refreshAccessToken();
             if (refreshed) return uploadAvatar(event);
         }
@@ -399,7 +399,7 @@ async function uploadAvatar(event) {
             throw new Error(data.error || 'Failed to upload avatar');
         }
     } catch (error) {
-        console.error('Error uploading avatar:', error);
+        // console.error('Error uploading avatar:', error);
         alert(error.message);
     }
 }
@@ -407,7 +407,7 @@ async function uploadAvatar(event) {
 async function fetchPendingRequests() {
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.warn("No access token found.");
+        // console.warn("No access token found.");
         return;
     }
 
@@ -423,7 +423,7 @@ async function fetchPendingRequests() {
         });
 
         if (response.status === 401) {
-            console.warn("Unauthorized. Refreshing token...");
+            // console.warn("Unauthorized. Refreshing token...");
             const refreshed = await refreshAccessToken();
             if (refreshed) return fetchPendingRequests();
         }
@@ -432,21 +432,21 @@ async function fetchPendingRequests() {
 
         const data = await response.json();
         if (!data.pending_requests || data.pending_requests.length === 0) {
-            console.warn("No pending friend requests.");
+            // console.warn("No pending friend requests.");
             document.getElementById('pending-requests').innerHTML = '<p>No pending requests.</p>';
             return;
         }
 
         displayPendingRequests(data.pending_requests);
     } catch (error) {
-        console.error(error);
+        // console.error(error);
     }
 }
 
 async function declineFriendRequest(requestId) {
     const accessToken = getAccessToken();
     if (!accessToken) {
-        console.warn("No access token found.");
+        // console.warn("No access token found.");
         return;
     }
 
@@ -466,7 +466,7 @@ async function declineFriendRequest(requestId) {
         alert('Friend request declined.');
         fetchPendingRequests();
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         alert(error.message);
     }
 }
