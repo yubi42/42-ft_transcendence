@@ -1,9 +1,10 @@
-import { getCSRFToken, logout, getRefreshToken, getAccessToken, removeTokens} from './auth.js';
+import {getCSRFToken, logout, getRefreshToken, getAccessToken, removeTokens} from './auth.js';
+import {displayMatchHistory} from './gameHistory.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     fetchProfileData();
     fetchFriends();
-    fetchMatchHistory();
+    displayMatchHistory('two-player-pong');
     fetchPendingRequests();
 
     const logoutButton = document.getElementById('logout-button');
@@ -38,6 +39,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (twoFAToggle) {
         twoFAToggle.addEventListener('change', toggle2FA);
     }
+
+    const tabs = document.querySelectorAll(".game-tab");
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            tabs.forEach(t => t.classList.remove("active")); // Remove active class
+            tab.classList.add("active"); // Set active tab
+
+            const selectedGameMode = tab.getAttribute("data-game");
+            displayMatchHistory(selectedGameMode);
+        });
+    });
 });
 
 export async function refreshAccessToken() {
@@ -70,7 +82,6 @@ export async function refreshAccessToken() {
         return false;
     }
 }
-
 
 function fetchProfileData() {
     const accessToken = getAccessToken();
@@ -109,6 +120,14 @@ function fetchProfileData() {
             twoFAToggle.checked = !!data.twoFA_active;
             twoFAStatus.textContent = data.twoFA_active ? "Enabled" : "Disabled";
         }
+
+        // Game statistics
+        const stats = data['stats']
+        document.getElementById('games-played').textContent = stats['total']['games-played'] ?? "-";
+        document.getElementById('games-losses').textContent = stats['total']['games-losses'] ?? "-";
+        document.getElementById('games-wins').textContent = stats['total']['games-wins'] ?? "-";
+        document.getElementById('games-draws').textContent = stats['total']['games-draws'] ?? "-";
+        document.getElementById('ranking-score').textContent = stats['two-player-pong']['ranking-score'] ?? "-";
     })
     .catch(error => {
         // console.error('Error fetching profile data:', error);
@@ -339,100 +358,6 @@ async function blockFriend(username) {
     } catch (error) {
         // console.error(error);
         alert(error.message);
-    }
-}
-
-function getGameStatus(score, playerIdx){
-	const gameStatusCell = document.createElement('td');
-	const opponentIdx = (playerIdx + 1) % 2;
-	if (score[playerIdx] == score[opponentIdx]){
-		gameStatusCell.textContent = 'Draw';
-		gameStatusCell.style.color = 'yellow';
-	} else if (score[playerIdx] > score[opponentIdx]){
-		gameStatusCell.textContent = 'Win';
-		gameStatusCell.style.color = 'green';
-	} else {
-		gameStatusCell.textContent = 'Lost';
-		gameStatusCell.style.color = 'red';
-	}
-	return (gameStatusCell);
-}
-
-async function fetchMatchHistory() {
-    const accessToken = getAccessToken();
-    if (!accessToken) {
-        // console.warn("No access token found.");
-        return;
-    }
-
-    const tableBody = document.getElementById('match-history-body');
-    try {
-        let response = await fetch('/user-api/game-history?' +
-            new URLSearchParams({ limit: '10' }).toString(), {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`,
-                    'X-CSRFToken': getCSRFToken(),
-                },
-                credentials: 'include',
-            });
-
-        if (response.status === 401) {
-            // console.warn("Unauthorized. Refreshing token...");
-            const refreshed = await refreshAccessToken();
-            if (refreshed) return fetchMatchHistory();
-        }
-
-        if (!response.ok) throw new Error(`Failed to fetch match history: ${response.status}`);
-
-        const json = await response.json();
-        const games = json.results;
-
-        if (!games || games.length === 0) {
-            // console.warn("No match history found.");
-            tableBody.innerHTML = '<tr><td colspan="5">No match history available.</td></tr>';
-            return;
-        }
-
-        tableBody.innerHTML = '';
-
-        games.forEach(game => {
-            const row = document.createElement('tr');
-
-            const dateCell = document.createElement('td');
-            dateCell.textContent = new Date(game.dateTime).toLocaleString();
-            row.appendChild(dateCell);
-
-            const gameModeCell = document.createElement('td');
-            gameModeCell.textContent = game.gameMode;
-            row.appendChild(gameModeCell);
-
-            const opponentCell = document.createElement('td');
-            const scoreCell = document.createElement('td');
-            let gameStatusCell;
-            const username = document.getElementById('username').textContent;
-
-            if (game.players[0] === username) {
-                opponentCell.textContent = game.players[1];
-                scoreCell.textContent = game.score[0] + '-' + game.score[1];
-                gameStatusCell = getGameStatus(game.score, 0);
-            } else if (game.players[1] === username) {
-                opponentCell.textContent = game.players[0];
-                scoreCell.textContent = game.score[1] + '-' + game.score[0];
-                gameStatusCell = getGameStatus(game.score, 1);
-            } else {
-                // console.error(`Game with id ${game.id} can't be connected to current user: ${username}. PLAYERS: ${game.players[0]}, ${game.players[1]}`);
-                return;
-            }
-
-            row.appendChild(opponentCell);
-            row.appendChild(scoreCell);
-            row.appendChild(gameStatusCell);
-            tableBody.appendChild(row);
-        });
-    } catch (error) {
-        // console.error(error.message);
     }
 }
 
