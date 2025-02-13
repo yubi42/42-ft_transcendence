@@ -4,6 +4,7 @@ import {displayMatchHistory} from './gameHistory.js';
 document.addEventListener('DOMContentLoaded', function() {
     fetchProfileData();
     fetchFriends();
+	loadAvatar();
     displayMatchHistory('two-player-pong');
     fetchPendingRequests();
 
@@ -132,6 +133,29 @@ function fetchProfileData() {
     .catch(error => {
         // console.error('Error fetching profile data:', error);
     });
+}
+
+async function loadAvatar() {
+	const accessToken = getAccessToken();
+    if (!accessToken) {
+        return;
+    }
+    try {
+		const response = await fetch('/user-api/download-avatar/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+        },
+        credentials: 'include',
+    	});
+    	if (!response.ok) throw new Error(`Failed to get avatar: ${response.status}`);
+		const avatarBlob = await response.blob();
+		const avatarUrl = URL.createObjectURL(avatarBlob);
+		document.getElementById('avatar').src = avatarUrl;
+    } catch (error){
+		document.getElementById('avatar').src = './images/default_avatar.jpg';
+	}
 }
 
 async function toggle2FA(event) {
@@ -393,7 +417,7 @@ async function uploadAvatar(event) {
         const data = await response.json();
 
         if (data.message) {
-            document.getElementById('avatar').src = '/user-api/upload-avatar/';
+            loadAvatar();
             alert('Avatar uploaded successfully!');
         } else {
             throw new Error(data.error || 'Failed to upload avatar');
