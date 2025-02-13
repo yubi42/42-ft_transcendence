@@ -12,6 +12,9 @@
     width: 100%;
     z-index: 3;
 }
+.navbar div h1 {
+    cursor: pointer;
+}
 
 .navbar > div:first-of-type
 {

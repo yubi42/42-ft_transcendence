@@ -13,7 +13,7 @@ document.getElementById('go-back').addEventListener('click', () => {
           content.classList.remove('active');
         }
       );  
-      document.querySelector('option-choose').classList.add('active');
+      document.getElementById('option-choose').classList.add('active');
     })
 
 document.addEventListener('DOMContentLoaded', () => {
