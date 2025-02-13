@@ -13,6 +13,8 @@ all:
 	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
 	mkdir -p /home/${USER}/data/lobby_db
 	mkdir -p /home/${USER}/data/userdata_db
+	mkdir -p /home/${USER}/data/avatars
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "chmod -R 777 /parentdir/avatars"
 	@${COMPOSE_CMD} build --no-cache
 
 up:
@@ -36,6 +38,7 @@ fclean-local: fclean
 	docker run --rm -v /home/${USER}/data/lobby_db:/data alpine sh -c "rm -rf /data/*"
 	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
 	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/userdata_db"
+	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/avatars"
 
 fclean-local-run: fclean-local run
 

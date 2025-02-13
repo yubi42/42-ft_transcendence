@@ -18,7 +18,10 @@
     <main>
         <section id="profile-info">
             <div id="avatar-container">
-                <img id="avatar" src="./images/default_avatar.jpg" alt="User Avatar">
+                <img id="avatar" 
+     				src="./user-api/download-avatar" 
+     				alt="User Avatar"
+     				onError="this.onerror=null; this.src='./images/default_avatar.jpg';">
                 <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
                 <button id="change-avatar-btn">Change Avatar</button>
             </div>

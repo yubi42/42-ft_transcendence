@@ -105,6 +105,8 @@ services:
     networks:
       - app-network
       - userdata-network
+    volumes:
+      - /home/${USER}/data/avatars:/home/app/web/avatars:rw
 
   userdata_db:
     container_name: userdata_db

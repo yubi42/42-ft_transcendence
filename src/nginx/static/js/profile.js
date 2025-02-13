@@ -393,7 +393,7 @@ async function uploadAvatar(event) {
         const data = await response.json();
 
         if (data.message) {
-            document.getElementById('avatar').src = window.URL.createObjectURL(file);
+            document.getElementById('avatar').src = '/user-api/upload-avatar/';
             alert('Avatar uploaded successfully!');
         } else {
             throw new Error(data.error || 'Failed to upload avatar');

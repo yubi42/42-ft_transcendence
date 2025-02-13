@@ -1,4 +1,5 @@
 import logging
+from django.utils.timezone import now
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.crypto import get_random_string
@@ -7,7 +8,7 @@ from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from .models import Profile, FriendRequest, TwoFactorCode
 from .serializers import UserSerializer, ProfileSerializer, FriendSerializer, FriendRequestSerializer, TokenWith2FASerializer
 from django.middleware.csrf import get_token
@@ -222,9 +223,25 @@ def upload_avatar(request):
 
     if not file:
         return Response({'error': 'No avatar provided'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if profile.avatar:
+        try:
+            profile.avatar.delete(save=False)
+        except Exception as e:
+            return Response({'error': f'Error deleting old avatar: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    profile.avatar.save(file.name, file, save=True)
+    profile.avatar.save(request.user.username + '_' + str(now()), file, save=True)
     return Response({'message': 'Avatar updated successfully'}, status=status.HTTP_200_OK)
+
+def download_avatar(request):
+    profile = get_object_or_404(Profile, user=request.user)
+
+    avatar_path = profile.avatar.path
+    try:
+        with open(avatar_path, 'rb') as avatar_file:
+            return HttpResponse(avatar_file.read(), content_type="image/jpeg")
+    except FileNotFoundError:
+        raise Http404({'error': 'Avatar not found'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
 @login_required
