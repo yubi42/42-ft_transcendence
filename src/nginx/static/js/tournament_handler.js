@@ -110,17 +110,17 @@ export function joinTournament(lobby_id, lobby_name, max_score)
         else if (data.type == 'start_1')
         {
           disableStartButton(start_1);
-          startTournamentGame(lobby_id + `game_1`, `game_1`, data.roles.p1 == name ? 'p1' : 'p2', 2, data.roles, max_score);
+          startTournamentGame(lobby_id + `game_1`, `game_1`, data.roles.p1 == name ? 'p1' : 'p2', data.roles, max_score, p1.textContent, p2.textContent, lobby_name);
         }
         else if (data.type == 'start_2')
         {
           disableStartButton(start_2);
-          startTournamentGame(lobby_id + `game_2`, `game_2`, data.roles.p1 == name ? 'p1' : 'p2', 2, data.roles, max_score);
+          startTournamentGame(lobby_id + `game_2`, `game_2`, data.roles.p1 == name ? 'p1' : 'p2', data.roles, max_score, p3.textContent, p4.textContent, lobby_name);
         }
         else if (data.type == 'start_3')
         {
           disableStartButton(start_3);
-          startTournamentGame(lobby_id + `game_3`, `game_3`, data.roles.p1 == name ? 'p1' : 'p2', 2, data.roles, max_score);
+          startTournamentGame(lobby_id + `game_3`, `game_3`, data.roles.p1 == name ? 'p1' : 'p2', data.roles, max_score, p1_2.textContent, p2_2.textContent, lobby_name);
         }
         else if (data.type == 'p1_round2')
         {

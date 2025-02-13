@@ -23,14 +23,14 @@
 <body>
   <div class="navbar">
     <div>
-      <h1>PacPong</h1>
+      <h1 id="go-back">PacPong</h1>
     </div>
     <div>
-      <button id="login-button">Login</button>
-      <button id="logout-button" style="display:none;">Logout</button>
+      <button id="login-button" class="start_button start_enabled">Login</button>
+      <button id="logout-button" class="start_button start_enabled" style="display:none;">Logout</button>
       <hr>
-      <button id="signup-button">Sign Up</button>
-      <button id="profile-button" style="display:none;">Profile</button>
+      <button id="signup-button" class="start_button start_enabled">Sign Up</button>
+      <button id="profile-button" class="start_button start_enabled" style="display:none;">Profile</button>
     </div>
 
   </div>
@@ -160,7 +160,7 @@
         <h2>Login</h2>
             <input type="text" name="username" placeholder="Username" required>
             <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Log In</button>
+            <button type="submit" class="start_button start_enabled">Log In</button>
         <p>Don't have an account? <span id="signup-link">Sign Up</span></p>
       </form>
       <form class="sign-in" id="signup-form">
@@ -168,7 +168,7 @@
             <input type="text" name="username" placeholder="Username" required>
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Sign Up</button>
+            <button type="submit" class="start_button start_enabled">Sign Up</button>
         <p>Already have an account? <span id="login-link">Log In</span></p>
       </form>
      </div>

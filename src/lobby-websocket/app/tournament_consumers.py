@@ -187,6 +187,13 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     'p1_round2' : self.lobby_session.players2.p1,
                 }
                 )
+                await self.send_2players(
+                self.lobby_session.player_names.get(self.lobby_session.players.p3),
+                self.lobby_session.players.p3,
+                self.lobby_session.player_names.get(self.lobby_session.players.p4), 
+                self.lobby_session.players.p4,
+                'enable_start_2'
+                )
             elif game_id == 'game_2':
                 if winner == 'p1':
                     self.lobby_session.players2.p2 = self.lobby_session.players.p3
@@ -284,13 +291,13 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             self.lobby_session.players.p2,
             'enable_start_1'
         )
-        await self.send_2players(
-            self.lobby_session.player_names.get(self.lobby_session.players.p3),
-            self.lobby_session.players.p3,
-            self.lobby_session.player_names.get(self.lobby_session.players.p4), 
-            self.lobby_session.players.p4,
-            'enable_start_2'
-        )
+        # await self.send_2players(
+        #     self.lobby_session.player_names.get(self.lobby_session.players.p3),
+        #     self.lobby_session.players.p3,
+        #     self.lobby_session.player_names.get(self.lobby_session.players.p4), 
+        #     self.lobby_session.players.p4,
+        #     'enable_start_2'
+        # )
     
     async def send_start_tournament(self, event):
         await self.send(text_data=json.dumps({

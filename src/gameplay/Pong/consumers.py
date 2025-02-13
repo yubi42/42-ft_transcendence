@@ -1,8 +1,9 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 # from .signals import game_update_signal, game_init_signal, game_end_signal
 import asyncio, time, json, httpx
-# import logging
-# logger = logging.getLogger(__name__)
+from urllib.parse import unquote
+import logging
+logger = logging.getLogger(__name__)
 
 # from multiprocessing.shared_memory import SharedMemory
 # from channels.db import database_sync_to_async
@@ -66,7 +67,10 @@ class PongGame(AsyncWebsocketConsumer):
 		self.max_score = int(self.scope['url_route']['kwargs']['max_score'])
 		query_string = self.scope["query_string"].decode()
 		query_params = dict(qc.split("=") for qc in query_string.split("&") if "=" in qc)
-		self.token = query_params.get("token")
+		self.token = unquote(query_params["token"]) if "token" in query_params else None
+		self.p1 = unquote(query_params["p1"]) if "p1" in query_params else None
+		self.p2 = unquote(query_params["p2"]) if "p2" in query_params else None
+		self.lobby_name = unquote(query_params["lobby_name"]) if "lobby_name" in query_params else None
 		self.lobby_group_name = f"lobby_{self.lobby_id}"
 		self.cookies = self.scope.get('cookies', {})
 		self.csrf_token = self.cookies.get('csrftoken', None)
@@ -183,8 +187,7 @@ class PongGame(AsyncWebsocketConsumer):
 					url = f"http://nginx:80/lobby/players/{self.lobby_id}/"
 					async with httpx.AsyncClient() as client:
 						response = await client.get(url)
-					# if response.status_code != 200:
-					# 	logger.debug(f"Failed to get players.")
+					
 					roles = response.json()
 					url = f"http://nginx:80/user-api/addgame/"
 					async with httpx.AsyncClient() as client:
@@ -192,6 +195,22 @@ class PongGame(AsyncWebsocketConsumer):
 									json={'gameMode': 'two-player-pong',
 					   					'players':[roles['p1'], roles['p2']],
 										'score': [self.game_session.Lscore, self.game_session.Rscore],
+					   					},
+        	    					headers={
+        	    					    'Content-Type': 'application/json',
+                	        			'Authorization': f'Bearer {self.token}',
+        	    					    'X-CSRFToken': self.token,
+        	    					},
+        	    					cookies=self.cookies,
+									)
+				elif 'game_3' in self.lobby_id:
+					url = f"http://nginx:80/user-api/addgame/"
+					async with httpx.AsyncClient() as client:
+						response = await client.post(url, 
+									json={'gameMode': 'four-player-tournament',
+					   					'players':[self.p1, self.p2],
+										'score': [self.game_session.Lscore, self.game_session.Rscore],
+										'lobbyName': self.lobby_name,
 					   					},
         	    					headers={
         	    					    'Content-Type': 'application/json',

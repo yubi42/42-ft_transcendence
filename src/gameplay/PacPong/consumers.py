@@ -250,7 +250,7 @@ class PacPongGame(AsyncWebsocketConsumer):
 					response = await client.post(url, 
 								json={'gameMode': 'pac-pong',
 				   					'players':[roles['p1'], roles['p2'], roles['p3']],
-									'score': [self.game_session.Lscore, self.game_session.Rscore],
+									'score': [self.game_session.Lscore, self.game_session.Rscore, self.game_session.Pscore],
 				   					},
         	    				headers={
         	    				    'Content-Type': 'application/json',

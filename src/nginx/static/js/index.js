@@ -3,14 +3,22 @@ import { logout, login, signup, getAccessToken } from './auth.js';
 import { refreshAccessToken } from './profile.js';
 import { setName } from './globals.js';
 
+document.getElementById('login-button').addEventListener('click', showLoginForm);
+document.getElementById('signup-button').addEventListener('click', showSignupForm);
+document.getElementById('logout-button').addEventListener('click', logout);
+document.getElementById('profile-button').addEventListener('click', loadProfile);
+document.getElementById('go-back').addEventListener('click', () => {
+    document.querySelectorAll('.online').forEach(content => 
+        {
+          content.classList.remove('active');
+        }
+      );  
+      document.querySelector('option-choose').classList.add('active');
+    })
+
 document.addEventListener('DOMContentLoaded', () => {
     resetNavigation();
     checkAuthentication();
-
-    document.getElementById('login-button').addEventListener('click', showLoginForm);
-    document.getElementById('signup-button').addEventListener('click', showSignupForm);
-    document.getElementById('logout-button').addEventListener('click', logout);
-    document.getElementById('profile-button').addEventListener('click', loadProfile);
 });
 
 const loginForm = document.getElementById('login-form');
@@ -53,8 +61,8 @@ async function checkAuthentication() {
             document.getElementById('sign-background').classList.remove('active');
             document.getElementById('login-button').style.display = 'none';
             document.getElementById('signup-button').style.display = 'none';
-            document.getElementById('logout-button').style.display = 'inline-block';
-            document.getElementById('profile-button').style.display = 'inline-block';
+            document.getElementById('logout-button').style.display = 'flex';
+            document.getElementById('profile-button').style.display = 'flex';
         } else if (response.status === 401) {
             // console.warn("Unauthorized: Trying token refresh...");
             const refreshed = await refreshAccessToken();
@@ -62,8 +70,8 @@ async function checkAuthentication() {
             document.getElementById('sign-background').classList.add('active');
             document.getElementById('sign').classList.add('active');
             document.getElementById('login-form').classList.add('active');
-            document.getElementById('login-button').style.display = 'inline-block';
-            document.getElementById('signup-button').style.display = 'inline-block';
+            document.getElementById('login-button').style.display = 'flex';
+            document.getElementById('signup-button').style.display = 'flex';
             document.getElementById('logout-button').style.display = 'none';
             document.getElementById('profile-button').style.display = 'none';
         }

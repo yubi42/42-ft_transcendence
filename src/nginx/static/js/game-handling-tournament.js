@@ -1,8 +1,8 @@
 import { drawGame2d, drawGame3d } from "./drawPongGame.js";
-import { gameplay_socket, lobby_socket, initGameplaySocket, closeGameplaySocket, customAlert } from "./globals.js";
+import { gameplay_socket, lobby_socket, initGameplaySocketTournament, closeGameplaySocket, customAlert } from "./globals.js";
 
 
-export function startTournamentGame(lobby_id, game_id, player, player_count, roles, max_score)
+export function startTournamentGame(lobby_id, game_id, player, roles, max_score, p1, p2, lobby_name)
 {
     let gameSettings = {
         scoreBoard : document.getElementById('score'),
@@ -54,7 +54,7 @@ export function startTournamentGame(lobby_id, game_id, player, player_count, rol
       console.log(gameSettings);
     });
 
-    initGameplaySocket(`/ws/gameplay/${max_score}/${lobby_id}/`);
+    initGameplaySocketTournament(`/ws/gameplay/${max_score}/${lobby_id}/`, p1, p2, lobby_name);
 
     const encodeState = (player, direction, moving) => {
       const playerBit = (player == 'p1' ? 0 : 1);
