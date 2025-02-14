@@ -95,11 +95,8 @@ services:
       dockerfile: Dockerfile
     expose:
       - ${USERDATA_PORT}
-    environment:
-      - USERDATA_PORT=${USERDATA_PORT}
-      - MICROSERVICE_SECRET_TOKEN=${MICROSERVICE_SECRET_TOKEN}
     env_file:
-      - ./userdata/.env
+      - ./.env
     depends_on:
       - userdata_db
     networks:
@@ -114,9 +111,9 @@ services:
     volumes:
       - userdata_db:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=new_user
-      - POSTGRES_PASSWORD=new_password
-      - POSTGRES_DB=userdata_db
+      - POSTGRES_USER=${USERDATA_DB_USER}
+      - POSTGRES_PASSWORD=${USERDATA_DB_PASSWORD}
+      - POSTGRES_DB=${USERDATA_DB_NAME}
     networks:
       - userdata-network
 
