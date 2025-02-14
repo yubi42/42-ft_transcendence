@@ -89,6 +89,7 @@ services:
       - ./nginx/static:/usr/share/nginx/html
 
   userdata:
+    container_name: userdata
     build:
       context: ./userdata/
       dockerfile: Dockerfile
@@ -96,6 +97,7 @@ services:
       - ${USERDATA_PORT}
     environment:
       - USERDATA_PORT=${USERDATA_PORT}
+      - MICROSERVICE_SECRET_TOKEN=${MICROSERVICE_SECRET_TOKEN}
     env_file:
       - ./userdata/.env
     depends_on:
@@ -103,8 +105,11 @@ services:
     networks:
       - app-network
       - userdata-network
+    volumes:
+      - /home/${USER}/data/avatars:/home/app/web/avatars:rw
 
   userdata_db:
+    container_name: userdata_db
     image: postgres:15
     volumes:
       - userdata_db:/var/lib/postgresql/data/
