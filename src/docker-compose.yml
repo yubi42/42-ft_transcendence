@@ -4,12 +4,13 @@ services:
     build: ./gameplay
     container_name: ${GAMEPLAY_NAME}
     command: daphne -b 0.0.0.0 -p ${GAMEPLAY_PORT} PongBackend.asgi:application
+    environment:
+      GAMEPLAY_SECRET_KEY: ${GAMEPLAY_SECRET_KEY}
     networks:
       - app-network
       - gameplay-redis-network
     expose:
       - ${GAMEPLAY_PORT}
-
 
   gameplay_redis:
     image: redis:latest
@@ -19,15 +20,13 @@ services:
     networks:
       - gameplay-redis-network
 
-
-
-
   lobby_api:
     build: ./lobby-api
     container_name: ${LOBBY_API_NAME}
     depends_on:
       - ${LOBBY_DB_NAME}
     environment:
+      LOBBY_API_SECRET_KEY: ${LOBBY_API_SECRET_KEY}
       POSTGRES_DB: ${LOBBY_DB_NAME}
       POSTGRES_USER: ${LOBBY_DB_USER}
       POSTGRES_PASSWORD: ${LOBBY_DB_PASSWORD}
@@ -58,6 +57,8 @@ services:
     build: ./lobby-websocket
     container_name: ${LOBBY_WEBSOCKET_NAME}
     command: daphne app.asgi:application -b 0.0.0.0 -p 8003
+    environment:
+      LOBBY_WEBSOCKET_SECRET_KEY: ${LOBBY_WEBSOCKET_SECRET_KEY}
     depends_on:
       - ${LOBBY_API_NAME}
       - lobby_redis
@@ -116,7 +117,6 @@ services:
       - POSTGRES_DB=${USERDATA_DB_NAME}
     networks:
       - userdata-network
-
 
 networks:
   app-network:
