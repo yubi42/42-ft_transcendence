@@ -19,7 +19,6 @@ class MicroserviceTokenAuthentication(BaseAuthentication):
         if not token:
             return None
         expected_token = getattr(settings, "MICROSERVICE_SECRET_TOKEN", None)
-        logger.info(f"TOKEN:{token}, EXPECTED TOKEN:{expected_token}")
         if not expected_token or token != expected_token:
             raise AuthenticationFailed('No permission to access API')
         return (None, None)
