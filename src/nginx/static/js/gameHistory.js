@@ -32,8 +32,7 @@ export async function displayMatchHistory(gameMode) {
         const games = json.results;
 
         if (!games || games.length === 0) {
-            console.warn("No match history found.");
-            matchHistoryBody.innerHTML = '<tr><td colspan="5">No match history available.</td></tr>';
+            matchHistoryBody.innerHTML = '<tr><td colspan="5">No matches found.</td></tr>';
             return;
         }
         matchHistoryBody.innerHTML = '';

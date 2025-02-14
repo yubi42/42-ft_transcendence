@@ -2,12 +2,13 @@ import {getCSRFToken, logout, getRefreshToken, getAccessToken, removeTokens} fro
 import {displayMatchHistory} from './gameHistory.js';
 
 document.addEventListener('DOMContentLoaded', function() {
-    fetchProfileData();
-    fetchFriends();
-	loadAvatar();
-    displayMatchHistory('two-player-pong');
-    fetchPendingRequests();
-
+	if (window.location.pathname.includes('profile.html')) {
+		fetchProfileData();
+		fetchFriends();
+		loadAvatar();
+		displayMatchHistory('two-player-pong');
+		fetchPendingRequests();
+	}
     const logoutButton = document.getElementById('logout-button');
     if (logoutButton) logoutButton.addEventListener('click', logout);
 
