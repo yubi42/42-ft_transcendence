@@ -64,7 +64,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         if self.token:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    "http://nginx:80/user-api/profile/",
+                    "http://userdata:8004/user-api/profile/",
                     headers={
                         'Content-Type': 'application/json',
                         'Authorization': f'Bearer {self.token}',
@@ -419,7 +419,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         }))
 
     async def player_joined(self):
-        url = f"http://nginx:80/lobby/player_joined/{self.lobby_id}/{self.user_name}/"
+        url = f"http://lobby_api:8002/lobby/player_joined/{self.lobby_id}/{self.user_name}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
@@ -442,7 +442,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         )
 
     async def player_left(self):
-        url = f"http://nginx:80/lobby/player_left/{self.lobby_id}/{self.user_name}/"
+        url = f"http://lobby_api:8002/lobby/player_left/{self.lobby_id}/{self.user_name}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(url, data={'key': 'value'})
             if response.status_code != 200:
@@ -473,7 +473,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
 
     async def delete_lobby_entry(self):
-        url = f"http://nginx:80/lobby/delete/{self.lobby_id}/"
+        url = f"http://lobby_api:8002/lobby/delete/{self.lobby_id}/"
         async with httpx.AsyncClient() as client:
             response = await client.post(
                     url,

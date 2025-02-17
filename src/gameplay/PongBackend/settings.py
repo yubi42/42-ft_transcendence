@@ -141,6 +141,10 @@ CHANNEL_LAYERS = {
     },
 }
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = ['https://localhost']
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

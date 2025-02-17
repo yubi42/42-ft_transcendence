@@ -75,7 +75,7 @@ class PongGame(AsyncWebsocketConsumer):
 		if self.token:
 			async with httpx.AsyncClient() as client:
 				response = await client.get(
-                    "http://nginx:80/user-api/profile/",
+                    "http://userdata:8004/user-api/profile/",
                     headers={
                         'Content-Type': 'application/json',
                         'Authorization': f'Bearer {self.token}',
@@ -180,13 +180,13 @@ class PongGame(AsyncWebsocketConsumer):
 					del self.GameSessions[self.lobby_group_name]
 				# logger.debug("Deleting lobby....")
 				if str(self.lobby_id).isdigit():
-					url = f"http://nginx:80/lobby/players/{self.lobby_id}/"
+					url = f"http://lobby_api:8002/lobby/players/{self.lobby_id}/"
 					async with httpx.AsyncClient() as client:
 						response = await client.get(url)
 					# if response.status_code != 200:
 					# 	logger.debug(f"Failed to get players.")
 					roles = response.json()
-					url = f"http://nginx:80/user-api/addgame/"
+					url = f"http://userdata:8004/user-api/addgame/"
 					async with httpx.AsyncClient() as client:
 						response = await client.post(url, 
 									json={'gameMode': 'two-player-pong',

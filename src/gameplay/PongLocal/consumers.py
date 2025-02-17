@@ -74,7 +74,7 @@ class PongGameLocal(AsyncWebsocketConsumer):
 		if self.token:
 			async with httpx.AsyncClient() as client:
 				response = await client.get(
-                    "http://nginx:80/user-api/profile/",
+                    "http://userdata:8004/user-api/profile/",
                     headers={
                         'Content-Type': 'application/json',
                         'Authorization': f'Bearer {self.token}',
