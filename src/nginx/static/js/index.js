@@ -1,5 +1,6 @@
 import { showLoginForm, showSignupForm, resetNavigation, loadProfile } from './dom-utils.js';
-import { logout, login, signup } from './auth.js';
+import { logout, login, signup, getAccessToken } from './auth.js';
+import { refreshAccessToken } from './profile.js';
 import { setName } from './globals.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,29 +29,37 @@ document.getElementById('login-link').addEventListener('click', function() {
 
 async function checkAuthentication() {
     try {
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+            // console.warn("No access token found");
+            return;
+        }
+
         const response = await fetch('/user-api/profile/', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
             credentials: 'include',
         });
-        document.getElementById('sign').classList.remove('active');
-        document.querySelectorAll('.sign-in').forEach(content => 
-            {
-              content.classList.remove('active');
-            }
-          );
 
-          console.error(`Raw Response: ${response.status}`);
-          
+        // console.error(`Raw Response: ${response.status}`);
+
         if (response.ok) {
             const data = await response.json();
             setName(data.display_name);
             document.getElementById('sign').classList.remove('active');
+            document.getElementById('sign-background').classList.remove('active');
             document.getElementById('login-button').style.display = 'none';
             document.getElementById('signup-button').style.display = 'none';
             document.getElementById('logout-button').style.display = 'inline-block';
             document.getElementById('profile-button').style.display = 'inline-block';
-        } else {
+        } else if (response.status === 401) {
+            // console.warn("Unauthorized: Trying token refresh...");
+            const refreshed = await refreshAccessToken();
+            if (refreshed) return checkAuthentication();
+            document.getElementById('sign-background').classList.add('active');
             document.getElementById('sign').classList.add('active');
             document.getElementById('login-form').classList.add('active');
             document.getElementById('login-button').style.display = 'inline-block';
@@ -59,6 +68,6 @@ async function checkAuthentication() {
             document.getElementById('profile-button').style.display = 'none';
         }
     } catch (error) {
-        console.error('Authentication check failed:', error);
+        // console.error('Authentication check failed:', error);
     }
 }

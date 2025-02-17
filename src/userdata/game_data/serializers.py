@@ -16,7 +16,7 @@ class GameDataSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = GameData
-		fields = ['id', 'gameMode', 'players', 'score', 'dateTime']
+		fields = ['id', 'gameMode', 'players', 'score', 'dateTime','lobbyName']
 
 	def validate_gameMode(self, value):
 		if value not in dict(GameData.GAME_MODES):
@@ -49,36 +49,45 @@ class GameDataSerializer(serializers.ModelSerializer):
 	def validate(self, data):
 		players = data.get("players",[])
 		gameMode = data.get("gameMode")
+
 		# number of players validation
 		if not players:
 			raise serializers.ValidationError({"players": "There must at least exist one player"})
-		if (gameMode == 'two-player-pong' or gameMode == 'pac-pong') and len(players) != 2:
+		if ((gameMode == 'two-player-pong' and len(players) != 2) or
+			(gameMode == 'pac-pong' and len(players) != 3) or
+	 		(gameMode == 'four-player-tournament' and len(players) != 4)):
 			raise serializers.ValidationError({"gameMode": f"Not the right amount of players for gamemode \'{gameMode}\'"})
 		return data
 	
 	def create(self, validated_data):
 		profiles = validated_data.pop('players')
-		game = GameData.objects.create(**validated_data)
-		game.players.set(profiles)
+		score = validated_data.pop('score')
 		gameMode = validated_data.get('gameMode')
-		if not (gameMode == 'two-player-pong' or gameMode == 'pac-pong'):
-			raise serializers.ValidationError({"gameMode": f"Statistics for \'{gameMode}\' are not implemented yet"})
-		score = validated_data['score']
+		if gameMode == 'four-player-tournament':
+			score[2], score[3] = -1, -1
+		processed_score = {player.user.username : points for player, points in zip(profiles, score)}	
+		game = GameData.objects.create(**validated_data, score=processed_score)
+		game.players.set(profiles)
+
 		for profile_idx, profile in enumerate(profiles):
-			profile.stats['games-played'] = profile.stats.get('games-played', 0) + 1
+			profile.stats[gameMode]['games-played'] += 1
+			profile.stats['total']['games-played'] += 1
 			gameResult = 0
-			if score[0] == score[1]:
-				profile.stats['games-draws'] = profile.stats.get('games-draws', 0) + 1
+			if len(set(score)) == 1:
+				profile.stats[gameMode]['games-draws'] += 1
+				profile.stats['total']['games-draws'] += 1
 				gameResult = 0.5
 			elif score[profile_idx] == max(score):
-				profile.stats['games-wins'] = profile.stats.get('games-wins', 0) + 1
+				profile.stats[gameMode]['games-wins'] += 1
+				profile.stats['total']['games-wins'] += 1
 				gameResult = 1
 			else:
-				profile.stats['games-losses'] = profile.stats.get('games-losses', 0) + 1
-			if len(profiles) == 2:
+				profile.stats[gameMode]['games-losses'] += 1
+				profile.stats['total']['games-losses'] += 1
+			if gameMode == 'two-player-pong':
 				opponent_idx = (profile_idx + 1) % 2
-				profile.stats['ranking-score'] = updateEloScore(profile.stats['ranking-score'],
-												profiles[opponent_idx].stats['ranking-score'], gameResult)
+				profile.stats[gameMode]['ranking-score'] = updateEloScore(profile.stats[gameMode]['ranking-score'],
+												profiles[opponent_idx].stats[gameMode]['ranking-score'], gameResult)
 			profile.save()
 		logger.info("Created a game data object")
 		return game

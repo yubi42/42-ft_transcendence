@@ -3,13 +3,14 @@ services:
   gameplay:
     build: ./gameplay
     container_name: ${GAMEPLAY_NAME}
-    # command: daphne app.asgi:application -b 0.0.0.0 -p ${GAMEPLAY_PORT}
+    command: daphne -b 0.0.0.0 -p ${GAMEPLAY_PORT} PongBackend.asgi:application
+    environment:
+      GAMEPLAY_SECRET_KEY: ${GAMEPLAY_SECRET_KEY}
     networks:
       - app-network
       - gameplay-redis-network
     expose:
       - ${GAMEPLAY_PORT}
-
 
   gameplay_redis:
     image: redis:latest
@@ -25,6 +26,7 @@ services:
     depends_on:
       - ${LOBBY_DB_NAME}
     environment:
+      LOBBY_API_SECRET_KEY: ${LOBBY_API_SECRET_KEY}
       POSTGRES_DB: ${LOBBY_DB_NAME}
       POSTGRES_USER: ${LOBBY_DB_USER}
       POSTGRES_PASSWORD: ${LOBBY_DB_PASSWORD}
@@ -55,6 +57,8 @@ services:
     build: ./lobby-websocket
     container_name: ${LOBBY_WEBSOCKET_NAME}
     command: daphne app.asgi:application -b 0.0.0.0 -p 8003
+    environment:
+      LOBBY_WEBSOCKET_SECRET_KEY: ${LOBBY_WEBSOCKET_SECRET_KEY}
     depends_on:
       - ${LOBBY_API_NAME}
       - lobby_redis
@@ -86,32 +90,33 @@ services:
       - ./nginx/static:/usr/share/nginx/html
 
   userdata:
+    container_name: userdata
     build:
       context: ./userdata/
       dockerfile: Dockerfile
     expose:
       - ${USERDATA_PORT}
-    environment:
-      - USERDATA_PORT=${USERDATA_PORT}
     env_file:
-      - ./userdata/.env
+      - ./.env
     depends_on:
       - userdata_db
     networks:
       - app-network
       - userdata-network
+    volumes:
+      - /home/${USER}/data/avatars:/home/app/web/avatars:rw
 
   userdata_db:
+    container_name: userdata_db
     image: postgres:15
     volumes:
       - userdata_db:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=new_user
-      - POSTGRES_PASSWORD=new_password
-      - POSTGRES_DB=userdata_db
+      - POSTGRES_USER=${USERDATA_DB_USER}
+      - POSTGRES_PASSWORD=${USERDATA_DB_PASSWORD}
+      - POSTGRES_DB=${USERDATA_DB_NAME}
     networks:
       - userdata-network
-
 
 networks:
   app-network:
