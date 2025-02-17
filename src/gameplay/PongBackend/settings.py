@@ -59,6 +59,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+MICROSERVICE_SECRET_TOKEN = os.environ["MICROSERVICE_SECRET_TOKEN"]
+
 ROOT_URLCONF = 'PongBackend.urls'
 
 TEMPLATES = [

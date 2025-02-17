@@ -6,6 +6,7 @@ services:
     command: daphne -b 0.0.0.0 -p ${GAMEPLAY_PORT} PongBackend.asgi:application
     environment:
       GAMEPLAY_SECRET_KEY: ${GAMEPLAY_SECRET_KEY}
+      MICROSERVICE_SECRET_TOKEN: ${MICROSERVICE_SECRET_TOKEN}
     networks:
       - app-network
       - gameplay-redis-network

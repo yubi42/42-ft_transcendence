@@ -1,5 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import asyncio, time, json, math, httpx
+from django.conf import settings
+
 # import logging
 # logger = logging.getLogger(__name__)
 
@@ -256,6 +258,8 @@ class PacPongGame(AsyncWebsocketConsumer):
         	    				    'Content-Type': 'application/json',
         	    				    'Authorization': f'Bearer {self.token}',
 									'X-CSRFToken': self.csrf_token,
+									'Microservice-Token' : getattr(settings, "MICROSERVICE_SECRET_TOKEN", None)
+
         	    				},
         	    				cookies=self.cookies
 								)

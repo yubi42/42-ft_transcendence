@@ -1,6 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 # from .signals import game_update_signal, game_init_signal, game_end_signal
 import asyncio, time, json, httpx
+from django.conf import settings
 # import logging
 # logger = logging.getLogger(__name__)
 
@@ -197,6 +198,7 @@ class PongGame(AsyncWebsocketConsumer):
         	    					    'Content-Type': 'application/json',
                 	        			'Authorization': f'Bearer {self.token}',
         	    					    'X-CSRFToken': self.token,
+										'Microservice-Token' : getattr(settings, "MICROSERVICE_SECRET_TOKEN", None)
         	    					},
         	    					cookies=self.cookies,
 									)
