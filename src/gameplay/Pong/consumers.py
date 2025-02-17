@@ -73,8 +73,8 @@ class PongGame(AsyncWebsocketConsumer):
 		self.token = unquote(query_params["token"]) if "token" in query_params else None
 		self.p1 = unquote(query_params["p1"]) if "p1" in query_params else None
 		self.p2 = unquote(query_params["p2"]) if "p2" in query_params else None
-		self.p1 = unquote(query_params["p3"]) if "p3" in query_params else None
-		self.p2 = unquote(query_params["p4"]) if "p4" in query_params else None
+		self.p3 = unquote(query_params["p3"]) if "p3" in query_params else None
+		self.p4 = unquote(query_params["p4"]) if "p4" in query_params else None
 		self.lobby_name = unquote(query_params["lobby_name"]) if "lobby_name" in query_params else None
 		self.lobby_group_name = f"lobby_{self.lobby_id}"
 		self.cookies = self.scope.get('cookies', {})
