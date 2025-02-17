@@ -10,14 +10,23 @@ let font;
 let currentScore = { left: 0, right: 0 };
 
 export function initGame3D(canvas) {
-    // Initialize renderer
+    // Initialize renderer with explicit pixel ratio and size handling
     renderer = new THREE.WebGLRenderer({
         canvas,
-        antialias: true
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: true
     });
+    
+    // Set size with explicit pixel ratio
+    const pixelRatio = window.devicePixelRatio;
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-    renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
-    renderer.shadowMap.enabled = true;
+
+    // Ensure canvas is visible and properly sized
+    canvas.style.display = 'block';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 
     // Scene with darker background
     scene = new THREE.Scene();
@@ -81,35 +90,62 @@ export function initGame3D(canvas) {
     player2Paddle.castShadow = true;
     scene.add(player2Paddle);
 
+    // Load texture with error handling and logging
+    const textureLoader = new THREE.TextureLoader();
+    console.log('Attempting to load texture from:', '/images/42_logo.png');
+    
+    let floor; // Declare floor variable at a higher scope
+    
+    const texture = textureLoader.load(
+        '/images/42_logo.png',
+        (loadedTexture) => {
+            console.log('Texture loaded successfully');
+            loadedTexture.wrapS = THREE.RepeatWrapping;
+            loadedTexture.wrapT = THREE.RepeatWrapping;
+            loadedTexture.repeat.set(1, 1);
+            loadedTexture.flipY = false;
+            
+            // Update the floor material when texture is loaded
+            if (floor && floor.material) {
+                floor.material.map = loadedTexture;
+                floor.material.needsUpdate = true;
+            }
+        },
+        (progress) => {
+            console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
+        },
+        (error) => {
+            console.error('Error loading texture:', error);
+        }
+    );
+
     // Floor (matches world dimensions)
-    const floorGeometry = new THREE.PlaneGeometry(worldWidth, worldDepth, 40, 20);
+    const floorGeometry = new THREE.PlaneGeometry(worldWidth, worldDepth);
     const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x333333,
+        map: texture,
         side: THREE.DoubleSide,
         metalness: 0.2,
         roughness: 0.8,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.5
     });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Solid floor beneath wireframe
-    const solidFloorGeometry = new THREE.PlaneGeometry(worldWidth, worldDepth);
-    const solidFloorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x222222,
+    // Grid overlay (optional - for added effect)
+    const gridGeometry = new THREE.PlaneGeometry(worldWidth, worldDepth, 40, 20);
+    const gridMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x333333,
         side: THREE.DoubleSide,
-        metalness: 0.2,
-        roughness: 0.8
+        wireframe: true,
+        transparent: true,
+        opacity: 0.2
     });
-    const solidFloor = new THREE.Mesh(solidFloorGeometry, solidFloorMaterial);
-    solidFloor.rotation.x = Math.PI / 2;
-    solidFloor.position.y = -0.01;
-    solidFloor.receiveShadow = true;
-    scene.add(solidFloor);
+    const grid = new THREE.Mesh(gridGeometry, gridMaterial);
+    grid.rotation.x = Math.PI / 2;
+    grid.position.y = 0.01; // Slightly above the textured floor
+    grid.receiveShadow = true;
+    scene.add(grid);
 
     // Walls (match world dimensions)
     const wallMaterial = new THREE.MeshStandardMaterial({ 
@@ -160,16 +196,16 @@ export function initGame3D(canvas) {
 }
 
 function createScoreDisplays() {
-    if (!font) return;
+    if (!font || !scene) return;
 
-    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 }); // Yellow color
+    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
 
-    // Create initial score texts
+    // Create initial score texts with depth instead of height
     playerScoreText = new THREE.Mesh(
         new TextGeometry(currentScore.left.toString(), {
             font: font,
             size: 0.8,
-            height: 0.1,
+            depth: 0.1,  // Changed from height to depth
         }),
         textMaterial
     );
@@ -180,7 +216,7 @@ function createScoreDisplays() {
         new TextGeometry(currentScore.right.toString(), {
             font: font,
             size: 0.8,
-            height: 0.1,
+            depth: 0.1,  // Changed from height to depth
         }),
         textMaterial
     );
@@ -202,7 +238,7 @@ function updateScoreDisplays() {
         new TextGeometry(currentScore.left.toString(), {
             font: font,
             size: 0.8,
-            height: 0.1,
+            depth: 0.1,  // Changed from height to depth
         }),
         textMaterial
     );
@@ -218,7 +254,7 @@ function updateScoreDisplays() {
         new TextGeometry(currentScore.right.toString(), {
             font: font,
             size: 0.8,
-            height: 0.1,
+            depth: 0.1,  // Changed from height to depth
         }),
         textMaterial
     );
@@ -235,7 +271,7 @@ function createInstructionsText() {
         new TextGeometry('Score 10 points to win!', {
             font: font,
             size: 0.5,
-            height: 0.1,
+            depth: 0.1,  // Changed from height to depth
         }),
         textMaterial
     );

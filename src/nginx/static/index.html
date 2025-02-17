@@ -186,7 +186,7 @@
   <script type="module" src="./js/game-modes.js"></script>
   <script type="module" src="./js/index.js"></script>
   
-  <!-- Inline module to load the 3D game dynamically when "3d" is clicked -->
+  <!-- Modify the script that handles 3D/2D switching -->
   <script type="module">
     const threeDButton = document.getElementById('3d');
     const twoDButton = document.getElementById('2d');
@@ -217,9 +217,9 @@
       
       gameSettings.contextType = '3d';  // Update the context type
       
-      // Initialize the 3D game
+      // Initialize the 3D game with explicit canvas size
       game3dModule.initGame3D(canvas3d);
-      game3dModule.resizeRenderer(canvas3d.width, canvas3d.height);
+      game3dModule.resizeRenderer(canvas3d.clientWidth, canvas3d.clientHeight);
       game3dModule.animate();
     });
 
@@ -233,6 +233,19 @@
       // Clean up 3D resources
       const game3dModule = await import('./js/game_3d.js');
       game3dModule.cleanup();
+    });
+
+    // Fix the resize handler
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      // Debounce resize events
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(async () => {
+        if (gameSettings.contextType === '3d') {
+          const game3dModule = await import('./js/game_3d.js');
+          game3dModule.resizeRenderer(canvas3d.clientWidth, canvas3d.clientHeight);
+        }
+      }, 100);
     });
   </script>
 </body>

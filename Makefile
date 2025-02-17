@@ -37,7 +37,7 @@ fclean-local: fclean
 	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/lobby_db"
 	docker run --rm -v /home/${USER}/data:/parentdir alpine sh -c "rm -rf /parentdir/userdata_db"
 
-fclean-local-run: fclean-local run
+dev: fclean-local run
 
 
 .PHONY: all up run down clean fclean re reset
