@@ -208,6 +208,13 @@
       
       // Dynamically import and initialize the 3D game module
       const game3dModule = await import('./js/game_3d.js');
+      
+      // Clean up any existing 3D resources before initializing
+      game3dModule.cleanup();
+      
+      // Small delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       gameSettings.contextType = '3d';  // Update the context type
       
       // Initialize the 3D game
@@ -216,12 +223,16 @@
       game3dModule.animate();
     });
 
-    twoDButton.addEventListener('click', () => {
+    twoDButton.addEventListener('click', async () => {
       twoDButton.classList.add('active');
       threeDButton.classList.remove('active');
       canvas3d.style.display = 'none';
       canvas2d.style.display = 'block';
-      gameSettings.contextType = '2d';  // Update the context type
+      gameSettings.contextType = '2d';
+      
+      // Clean up 3D resources
+      const game3dModule = await import('./js/game_3d.js');
+      game3dModule.cleanup();
     });
   </script>
 </body>
