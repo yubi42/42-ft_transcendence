@@ -25,9 +25,10 @@ export function drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY) {
   context.fill();
 }
 
-// Placeholder for 3D drawing function.
-// In the future, you would implement Three.js rendering here.
+// Import the updateGameState function
+import { updateGameState } from './game_3d.js';
+
+// Update the drawGame3d function
 export function drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY) {
-  console.warn("drawGame3d: 3D rendering is not implemented yet.");
-  // Future implementation could update a Three.js scene instead.
+    updateGameState(gameSettings, paddleL, paddleR, ballX, ballY);
 }

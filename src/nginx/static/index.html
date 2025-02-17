@@ -197,22 +197,31 @@
       // Set active state on the UI
       threeDButton.classList.add('active');
       twoDButton.classList.remove('active');
+      
       // Hide the 2D canvas and show the 3D canvas
       canvas2d.style.display = 'none';
       canvas3d.style.display = 'block';
-      // Dynamically import and start the 3D game module (game_3d.js)
+      
+      // Set the 3D canvas size to match the 2D canvas
+      canvas3d.width = canvas2d.width;
+      canvas3d.height = canvas2d.height;
+      
+      // Dynamically import and initialize the 3D game module
       const game3dModule = await import('./js/game_3d.js');
-      // Call its animate function to start the render loop.
+      gameSettings.contextType = '3d';  // Update the context type
+      
+      // Initialize the 3D game
+      game3dModule.initGame3D(canvas3d);
+      game3dModule.resizeRenderer(canvas3d.width, canvas3d.height);
       game3dModule.animate();
     });
 
-    // Optionally, if the user switches back to 2D, reverse the display:
     twoDButton.addEventListener('click', () => {
       twoDButton.classList.add('active');
       threeDButton.classList.remove('active');
       canvas3d.style.display = 'none';
       canvas2d.style.display = 'block';
-      // You might want to add logic here to pause/stop the 3D animation.
+      gameSettings.contextType = '2d';  // Update the context type
     });
   </script>
 </body>
