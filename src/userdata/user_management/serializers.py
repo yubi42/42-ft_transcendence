@@ -29,7 +29,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_avatar_url(self, obj):
         if obj.avatar:
             return obj.avatar.url
-        return f"{settings.STATIC_URL}images/default-avatar.jpeg"
+        return f"./avatars/default-avatar.jpeg"
 
 
     def update(self, instance, validated_data):

@@ -49,23 +49,26 @@ class GameDataSerializer(serializers.ModelSerializer):
 	def validate(self, data):
 		players = data.get("players",[])
 		gameMode = data.get("gameMode")
+
 		# number of players validation
 		if not players:
 			raise serializers.ValidationError({"players": "There must at least exist one player"})
 		if ((gameMode == 'two-player-pong' and len(players) != 2) or
-  			(gameMode == 'pac-pong' and len(players) != 3) or
-     		(gameMode == 'four-player-tournament' and len(players) != 4)):
+			(gameMode == 'pac-pong' and len(players) != 3) or
+	 		(gameMode == 'four-player-tournament' and len(players) != 4)):
 			raise serializers.ValidationError({"gameMode": f"Not the right amount of players for gamemode \'{gameMode}\'"})
 		return data
 	
 	def create(self, validated_data):
 		profiles = validated_data.pop('players')
-		game = GameData.objects.create(**validated_data)
-		game.players.set(profiles)
+		score = validated_data.pop('score')
 		gameMode = validated_data.get('gameMode')
-		if gameMode not in ['two-player-pong','pac-pong','four-player-tournament']:
-			raise serializers.ValidationError({"gameMode": f"Statistics for \'{gameMode}\' are not implemented yet"})
-		score = validated_data['score']
+		if gameMode == 'four-player-tournament':
+			score[2], score[3] = -1, -1
+		processed_score = {player.user.username : points for player, points in zip(profiles, score)}	
+		game = GameData.objects.create(**validated_data, score=processed_score)
+		game.players.set(profiles)
+
 		for profile_idx, profile in enumerate(profiles):
 			profile.stats[gameMode]['games-played'] += 1
 			profile.stats['total']['games-played'] += 1
