@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import environ
-import os
 import sys
 from pathlib import Path
 from datetime import timedelta
@@ -20,18 +19,17 @@ env = environ.Env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-environ.Env.read_env(env_file=BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY", default="change_me")
+SECRET_KEY = env("USERDATA_SECRET_KEY", default="change_me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool("DEBUG", default=False)
+DEBUG = env.bool("USERDATA_DEBUG", default=False)
 
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "[::1]", "nginx"])
+ALLOWED_HOSTS = env.list("USERDATA_DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "[::1]", "nginx"])
 
 # Application definition
 
@@ -50,11 +48,11 @@ INSTALLED_APPS = [
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
-EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_HOST = env("USERDATA_EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("USERDATA_EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("USERDATA_EMAIL_USE_TLS", default=True)
+EMAIL_HOST_USER = env("USERDATA_EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("USERDATA_EMAIL_HOST_PASSWORD", default="")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -139,24 +137,15 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    #"default": {
-    #    "ENGINE": "django.db.backends.sqlite3",
-    #    "NAME": BASE_DIR / "db.sqlite3",
-    #    "USER":"user",
-    #    "PASSWORD": "password",
-    #    "HOST": "localhost",
-    #    "PORT": "5432",
-    #}
-    "default": {
-        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.environ.get("SQL_DATABASE", BASE_DIR / "db.sqlite3"),
-        "USER": os.environ.get("SQL_USER", "user"),
-        "PASSWORD": os.environ.get("SQL_PASSWORD", "password"),
-        "HOST": os.environ.get("SQL_HOST", "localhost"),
-        "PORT": os.environ.get("SQL_PORT", "5432"),
+ 	"default": {
+         "ENGINE": env("USERDATA_DB_ENGINE", default="django.db.backends.sqlite3"),
+         "NAME": str(env("USERDATA_DB_NAME", default=BASE_DIR / "db.sqlite3")),
+         "USER": env("USERDATA_DB_USER", default="user"),
+         "PASSWORD": env("USERDATA_DB_PASSWORD", default="password"),
+         "HOST": env("USERDATA_DB_HOST", default="localhost"),
+         "PORT": env("USERDATA_DB_PORT", default="5432"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -176,7 +165,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-MICROSERVICE_SECRET_TOKEN = os.getenv("MICROSERVICE_SECRET_TOKEN", "default_secret")
+MICROSERVICE_SECRET_TOKEN = env("MICROSERVICE_SECRET_TOKEN", default="default_secret")
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -189,7 +178,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost"]
 
 CSRF_COOKIE_HTTPONLY = False
 
@@ -200,8 +189,6 @@ CSRF_COOKIE_SECURE = False
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-EXAMPLE_URL = "/example/"
 
 # Redirect after successful login
 LOGIN_REDIRECT_URL = "/"  # User is redirected to their profile page after login

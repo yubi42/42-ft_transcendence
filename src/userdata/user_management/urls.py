@@ -14,6 +14,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('update-profile/', views.update_profile_view, name='update_profile'),
     path('upload-avatar/', views.upload_avatar, name='upload_avatar'),
+	path('download-avatar/', views.download_avatar, name='download_avatar'),
     path('', include(router.urls)),
     path('2fa/toggle/', views.toggle_2fa, name='toggle_2fa'),
     path('2fa/verify/', views.verify_2fa, name='verify_2fa'),

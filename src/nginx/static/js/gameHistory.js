@@ -32,8 +32,7 @@ export async function displayMatchHistory(gameMode) {
         const games = json.results;
 
         if (!games || games.length === 0) {
-            console.warn("No match history found.");
-            matchHistoryBody.innerHTML = '<tr><td colspan="5">No match history available.</td></tr>';
+            matchHistoryBody.innerHTML = '<tr><td colspan="5">No matches found.</td></tr>';
             return;
         }
         matchHistoryBody.innerHTML = '';
@@ -53,26 +52,31 @@ export async function displayMatchHistory(gameMode) {
     }
 }
 
-function getGameStatus(score, playerIdx){
+function getGameStatus(scores, playerKey){
     const gameStatusCell = document.createElement('td');
-    if (score[playerIdx] == Math.max(score) && score[playerIdx] == Math.min(score)){
+
+    const maxScore = Math.max(...scores);
+    const minScore = Math.min(...scores);
+    const playerScore = scores[playerKey];
+
+    if (playerScore === maxScore && playerScore === minScore) {
         gameStatusCell.textContent = 'Draw';
         gameStatusCell.style.color = 'yellow';
-    } else if (score[playerIdx] == Math.max(score)){
+    } else if (playerScore === maxScore) {
         gameStatusCell.textContent = 'Win';
         gameStatusCell.style.color = 'green';
     } else {
         gameStatusCell.textContent = 'Lost';
         gameStatusCell.style.color = 'red';
     }
-    return (gameStatusCell);
+    return gameStatusCell;
 }
 
 async function displayMatchHistoryHead(gameMode) {
     const tableHeaders = {
         "two-player-pong": ["Date", "Opponent", "Score", "Result"],
-        "pac-pong": ["Date", "Left", "Pacman", "Right", "Score", "Result"],
-        "four-player-tournament": ["Date", "Name", "Winner", "Second", "Third", "Forth"]
+        "pac-pong": ["Date", "Left", "Right", "Pacman", "Score (L-R-P)", "Result"],
+        "four-player-tournament": ["Date", "Name", "Winner", "Second", "Result"]
     };
     const matchHistoryHead = document.getElementById("match-history-head");
     matchHistoryHead.innerHTML = "";
@@ -98,17 +102,19 @@ async function genPongTableBody(games, matchHistoryBody) {
         const scoreCell = document.createElement('td');
         let gameStatusCell;
         const username = document.getElementById('username').textContent;
+		const players = Object.keys(game.score);
+		const scores = Object.values(game.score);
 
-        if (game.players[0] === username) {
-            opponentCell.textContent = game.players[1];
-            scoreCell.textContent = game.score[0] + '-' + game.score[1];
-            gameStatusCell = getGameStatus(game.score, 0);
-        } else if (game.players[1] === username) {
-            opponentCell.textContent = game.players[0];
-            scoreCell.textContent = game.score[1] + '-' + game.score[0];
-            gameStatusCell = getGameStatus(game.score, 1);
+        if (players[0] === username) {
+            opponentCell.textContent = players[1];
+            scoreCell.textContent = scores[0] + '-' + scores[1];
+            gameStatusCell = getGameStatus(scores, 0);
+        } else if (players[1] === username) {
+            opponentCell.textContent = players[0];
+            scoreCell.textContent = scores[1] + '-' + scores[0];
+            gameStatusCell = getGameStatus(scores, 1);
         } else {
-            console.error(`Game with id ${game.id} can't be connected to current user: ${username}. PLAYERS: ${game.players[0]}, ${game.players[1]}`);
+            console.error(`Game with id ${game.id} can't be connected to current user: ${username}`);
             return;
         }
         row.appendChild(opponentCell);
@@ -118,7 +124,7 @@ async function genPongTableBody(games, matchHistoryBody) {
     });
 }
 
-// Cells are ["Date", "Left", "Pacman", "Right", "Score", "Result"]
+// Cells are ["Date", "Left", "Right", "Pacman", "Score", "Result"]
 async function genPacPongTableBody(games, matchHistoryBody) {
     games.forEach(game => {
         const row = document.createElement('tr');
@@ -126,69 +132,79 @@ async function genPacPongTableBody(games, matchHistoryBody) {
         const dateCell = document.createElement('td');
         dateCell.textContent = new Date(game.dateTime).toLocaleString();
 
+		const players = Object.keys(game.score);
+		const scores = Object.values(game.score);
+
         const leftCell = document.createElement('td');
-        leftCell.textContent = game.players[0];
-        const pacCell = document.createElement('td');
-        pacCell.textContent = game.players[1];
+        leftCell.textContent = players[0];
         const rightCell = document.createElement('td');
-        rightCell.textContent = game.players[2];
+        rightCell.textContent = players[1];
+		const pacCell = document.createElement('td');
+        pacCell.textContent = players[2];
         const scoreCell = document.createElement('td');
-        scoreCell.textContent = game.score[0] + '-' + game.score[1] + '-' + game.score[2];
+        scoreCell.textContent = scores[0] + '-' + scores[1] + '-' + scores[2];
         let resultCell;
         const username = document.getElementById('username').textContent;
-        if (game.players[0] === username) {
-            resultCell = getGameStatus(game.score, 0);
-        } else if (game.players[1] === username) {
-            resultCell = getGameStatus(game.score, 1);
-        } else if (game.players[2] === username) {
-            resultCell = getGameStatus(game.score, 2);
+        if (players[0] === username) {
+            resultCell = getGameStatus(scores, 0);
+        } else if (players[1] === username) {
+            resultCell = getGameStatus(scores, 1);
+        } else if (players[2] === username) {
+            resultCell = getGameStatus(scores, 2);
         } else {
-            console.error(`Game with id ${game.id} can't be connected to current user: ${username}. PLAYERS: ${game.players[0]}, ${game.players[1]}`);
+            console.error(`Game with id ${game.id} can't be connected to current user: ${username}`);
             return;
         }
         row.appendChild(dateCell);
         row.appendChild(leftCell);
-        row.appendChild(pacCell);
         row.appendChild(rightCell);
+		row.appendChild(pacCell);
         row.appendChild(scoreCell);
         row.appendChild(resultCell);
         matchHistoryBody.appendChild(row);
     });
 }
 
-function getPlacement(players, score, placeIdx){
+function getPlacement(players, scores, placeIdx){
     const placeCell = document.createElement('td');
 
     const playerScores = players.map((player, index) => ({
         player,
-        score: score[index]
+        score: scores[index]
     }));
     playerScores.sort((a, b) => b.score - a.score);
     placeCell.textContent = playerScores[placeIdx - 1].player;
     return placeCell;
 }
 
-// Cells are ["Date", "Name", "Winner", "Second", "Third", "Forth"]
+// Cells are ["Date", "Name", "Winner", "Second", "Result"]
 async function genTournamentTableBody(games, matchHistoryBody) {
     games.forEach(game => {
         const row = document.createElement('tr');
-
+		const players = Object.keys(game.score);
+		const scores = Object.values(game.score);
         const dateCell = document.createElement('td');
         dateCell.textContent = new Date(game.dateTime).toLocaleString();
         row.appendChild(dateCell);
 
         const nameCell = document.createElement('td');
         nameCell.textContent = game.lobbyName;
-        let winnerCell = getPlacement(game.players, game.score, 1);
-        let secondCell = getPlacement(game.players, game.score, 2);
-        let thirdCell = getPlacement(game.players, game.score, 3);
-        let fourthCell = getPlacement(game.players, game.score, 4);
-
+        let winnerCell = getPlacement(players, scores, 1);
+        let secondCell = getPlacement(players, scores, 2);
+		let resultCell;
+		if (players[0] == document.getElementById('username').textContent){
+			resultCell = getGameStatus(scores, 0);
+		} else if (players[1] == document.getElementById('username').textContent) {
+			resultCell = getGameStatus(scores, 1);
+		} else {
+			resultCell = document.createElement('td');
+			resultCell.textContent = 'Lost';
+        	resultCell.style.color = 'red';
+		}
         row.appendChild(nameCell);
         row.appendChild(winnerCell);
         row.appendChild(secondCell);
-        row.appendChild(thirdCell);
-        row.appendChild(fourthCell);
+		row.appendChild(resultCell);
         matchHistoryBody.appendChild(row);
     });
 }

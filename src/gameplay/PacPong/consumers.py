@@ -1,5 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import asyncio, time, json, math, httpx
+from django.conf import settings
+
 # import logging
 # logger = logging.getLogger(__name__)
 
@@ -89,7 +91,7 @@ class PacPongGame(AsyncWebsocketConsumer):
 		if self.token:
 			async with httpx.AsyncClient() as client:
 				response = await client.get(
-                    "http://nginx:80/user-api/profile/",
+                    "http://userdata:8004/user-api/profile/",
                     headers={
                         'Content-Type': 'application/json',
                         'Authorization': f'Bearer {self.token}',
@@ -238,14 +240,14 @@ class PacPongGame(AsyncWebsocketConsumer):
 
 			if self.game_session.player_count == 0:
 				# logger.debug("Deleting lobby....")
-				url = f"http://nginx:80/lobby/players/{self.lobby_id}/"
+				url = f"http://lobby_api:8002/lobby/players/{self.lobby_id}/"
 				async with httpx.AsyncClient() as client:
 					response = await client.get(url)
 				# if response.status_code != 200:
 					# logger.debug(f"Failed to get players.")
 				roles = response.json()
 				# logger.debug(roles)
-				url = f"http://nginx:80/user-api/addgame/"
+				url = f"http://userdata:8004/user-api/addgame/"
 				async with httpx.AsyncClient() as client:
 					response = await client.post(url, 
 								json={'gameMode': 'pac-pong',
@@ -256,6 +258,8 @@ class PacPongGame(AsyncWebsocketConsumer):
         	    				    'Content-Type': 'application/json',
         	    				    'Authorization': f'Bearer {self.token}',
 									'X-CSRFToken': self.csrf_token,
+									'Microservice-Token' : getattr(settings, "MICROSERVICE_SECRET_TOKEN", None)
+
         	    				},
         	    				cookies=self.cookies
 								)

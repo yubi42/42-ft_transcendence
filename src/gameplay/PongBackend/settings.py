@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-w*(w&-o++v)i!nmnjh64@b5n01jp655@^^w(r%-ay)3^+d+y8l'
+SECRET_KEY = os.environ["GAMEPLAY_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -57,6 +58,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+MICROSERVICE_SECRET_TOKEN = os.environ["MICROSERVICE_SECRET_TOKEN"]
 
 ROOT_URLCONF = 'PongBackend.urls'
 
@@ -139,6 +142,10 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = ['https://localhost']
+
 
 LOGGING = {
     'version': 1,

@@ -21,13 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-idwy0$!tu_7j7z%9z0*#dr-!zla3n_gz=_q@i_#&7olrsvlo#^'
+SECRET_KEY = os.environ["LOBBY_WEBSOCKET_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1", 'lobby_api', 'lobby_websocket']
+ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1", 'lobby_api', 'lobby_websocket',"userdata"]
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = ['https://localhost/']
 
 # Application definition
 
