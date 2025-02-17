@@ -24,7 +24,7 @@ def create_lobby(request):
             mode = 4
         raw_password = request.POST.get('lobby_password', '')
         auth_response = requests.get(
-            "http://nginx:80/user-api/profile/",
+            "http://userdata:8004/user-api/profile/",
             headers = {
                 'Content-Type': 'application/json',
                 'Authorization': request.headers.get('Authorization'),
@@ -160,7 +160,7 @@ def delete_lobby_entry(request, lobby_id):
         if not csrf_token:
             csrf_token = request.headers.get('X-CSRFToken')
         auth_response = requests.get(
-            "http://nginx:80/user-api/profile/",
+            "http://userdata:8004/user-api/profile/",
             headers = {
                 'Content-Type': 'application/json',
                 'Authorization': request.headers.get('Authorization'),
