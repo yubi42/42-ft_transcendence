@@ -65,11 +65,11 @@ export function initGame3D(canvas) {
     });
     ball = new THREE.Mesh(ballGeometry, ballMaterial);
     ball.castShadow = true;
-    ball.position.y = 0.3; // Lift ball slightly above ground
+    ball.position.y = 0.3; // Back to original height
     scene.add(ball);
 
     // Enhanced paddles with metallic effect
-    const paddleGeometry = new THREE.BoxGeometry(2, 0.2, 1);
+    const paddleGeometry = new THREE.BoxGeometry(1, 0.5, 0.5);
     const paddleMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x00ff00,
         metalness: 0.6,
@@ -79,13 +79,15 @@ export function initGame3D(canvas) {
     });
 
     playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
-    playerPaddle.position.set(-10, 0.5, 0); // Adjust x to worldWidth/2
+    // Position before rotation: (x=forward/back, y=up/down, z=left/right)
+    playerPaddle.position.set(-10, 0.25, 0);
+    // After this rotation, x becomes z and z becomes -x
     playerPaddle.rotation.y = Math.PI / 2;
     playerPaddle.castShadow = true;
     scene.add(playerPaddle);
 
     player2Paddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
-    player2Paddle.position.set(10, 0.5, 0); // Adjust x to -worldWidth/2
+    player2Paddle.position.set(10, 0.25, 0);
     player2Paddle.rotation.y = Math.PI / 2;
     player2Paddle.castShadow = true;
     scene.add(player2Paddle);
@@ -285,9 +287,12 @@ export function updateGameState(gameSettings, paddleL, paddleR, ballX, ballY) {
     const worldWidth = 20;  // Match the initialization values
     const worldDepth = 10;
 
-    // Update paddles
-    playerPaddle.position.z = ((paddleL / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2);
-    player2Paddle.position.z = ((paddleR / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2);
+    // Store the initial Z offset that we set in the paddle creation
+    const zOffset = 0.5;  // Match the value we set in position.set()
+
+    // Update paddles - add the zOffset to maintain the forward position
+    playerPaddle.position.z = (((paddleL / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2)) + zOffset;
+    player2Paddle.position.z = (((paddleR / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2)) + zOffset;
 
     // Update ball position
     ball.position.z = ((ballY / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2);
