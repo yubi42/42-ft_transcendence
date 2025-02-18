@@ -176,7 +176,7 @@ export function initGame3D(canvas) {
 
     // Camera - adjust to view from front
     camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    camera.position.set(0, 5, 12); // Position camera in front
+    camera.position.set(0, 8, 12); // Position camera in front
     camera.lookAt(0, 0, 0);        // Look at the center
 
     // Controls
