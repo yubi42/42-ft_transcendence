@@ -36,7 +36,6 @@
     </div>
   </div>
   <main>
-    <div class="chat"></div>
     <div>
       <div class="game-selector active" id="online">
         <div class="online active" id="option-choose">
@@ -175,6 +174,10 @@
         <p>Already have an account? <span id="login-link">Log In</span></p>
       </form>
     </div>
+     <div class="sign sign-background" id="alert-background" ></div>
+     <div class="sign" id="alert">
+      <div class="sign-in active" id="alert-div"></div>
+     </div>
   </main>
 
   <!-- Note: The direct script inclusion for game_3d.js has been removed.
@@ -183,7 +186,6 @@
   <script type="module" src="./js/game-handling.js"></script>
   <script type="module" src="./js/lobby-creation.js"></script>
   <script type="module" src="./js/lobby-handling.js"></script>
-  <script type="module" src="./js/game-modes.js"></script>
   <script type="module" src="./js/index.js"></script>
   
   <!-- Modify the script that handles 3D/2D switching -->

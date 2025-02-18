@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-w*(w&-o++v)i!nmnjh64@b5n01jp655@^^w(r%-ay)3^+d+y8l'
+SECRET_KEY = os.environ["GAMEPLAY_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -140,21 +141,21 @@ CHANNEL_LAYERS = {
     },
 }
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'root': {
-#         'handlers': ['console'],
-#         'level': 'DEBUG',
-#     },
-#     'django': {
-#         'handlers': ['console'],
-#         'level': 'DEBUG',
-#         'propagate': False,
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+    'django': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+        'propagate': False,
+    },
+}
