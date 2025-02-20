@@ -12,7 +12,8 @@ export function startGame(lobby_id, player, player_count, roles, max_score) {
     paddle_height: 0,
     ball_size: 0,
     player: player,
-    screen_height_ratio: 0
+    screen_height_ratio: 0,
+    max_score: max_score
   };
 
   // Expose gameSettings globally so the inline module in index.html
@@ -192,7 +193,7 @@ function drawGame(data, gameSettings, roles) {
   if (gameSettings.contextType == '2d')
     drawGame2d(gameSettings, paddleL, paddleR, ballX, ballY);
   else 
-    drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY);
+    drawGame3d(gameSettings, paddleL, paddleR, ballX, ballY, gameSettings.max_score);
 
   if (roles)
     gameSettings.scoreBoard.textContent = `P1 : ${roles.p1} : ${data.Lscore} | ${data.Rscore} : ${roles.p2} : P2`;

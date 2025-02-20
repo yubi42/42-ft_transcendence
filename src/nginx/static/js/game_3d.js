@@ -193,7 +193,7 @@ export function initGame3D(canvas) {
     fontLoader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (loadedFont) => {
         font = loadedFont;
         createScoreDisplays();
-        createInstructionsText();
+        createInstructionsText(canvas.max_score);
     });
 }
 
@@ -265,12 +265,12 @@ function updateScoreDisplays() {
 }
 
 // Add function to create instructions text
-function createInstructionsText() {
+function createInstructionsText(max_score) {
     if (!font) return;
 
     const textMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const instructionsText = new THREE.Mesh(
-        new TextGeometry('Score 10 points to win!', {
+        new TextGeometry(`Score ${max_score} points to win!`, {
             font: font,
             size: 0.5,
             depth: 0.1,  // Changed from height to depth
@@ -306,6 +306,9 @@ export function updateGameState(gameSettings, paddleL, paddleR, ballX, ballY) {
         currentScore.right = parseInt(scores[2]);
         updateScoreDisplays();
     }
+
+    // Store max_score on canvas for later use
+    renderer.domElement.max_score = gameSettings.max_score;
 }
 
 export function animate() {
