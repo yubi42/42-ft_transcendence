@@ -6,7 +6,8 @@ export let gameplay_socket;
 
 export let name;
 
-
+window.addEventListener('beforeunload', closeSockets);
+window.addEventListener('popstate', closeSockets);
 
 export function initLobbySocket(url)
 {

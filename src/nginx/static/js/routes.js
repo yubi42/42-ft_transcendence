@@ -1,50 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Transcendence</title>
-	<link rel="stylesheet" href="./css/main.css">
-	<link rel="stylesheet" href="./css/game_3d.css">
-	<link rel="stylesheet" href="./css/game-modes.css">
-	<link rel="stylesheet" href="./css/navbar.css">
-	<link rel="stylesheet" href="./css/login.css">
-	<link rel="stylesheet" href="./css/pop-up.css">
-  <link rel="stylesheet" href="./css/profile.css">
-    <script type="importmap">
-        {
-          "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@v0.170.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.170.0/examples/jsm/"
-          }
-        }
-    </script>
-</head>
-<body>
-  <div class="navbar">
-    <div>
-      <h1 id="go-back">PacPong</h1>
-    </div>
-    <div>
-      <button id="login-button" class="start_button start_enabled">Login</button>
-      <button id="logout-button" class="start_button start_enabled" style="display:none;">Logout</button>
-      <hr>
-      <button id="signup-button" class="start_button start_enabled">Sign Up</button>
-      <button id="profile-button" class="start_button start_enabled" style="display:none;">Profile</button>
-      <button id="settings-button" class="start_button start_enabled" style="display:none;">Settings</button>
-    </div>
 
-  </div>
-  <main>
-    <div id="app">
-<!--         <div class="game-selector active" id="online">
+export const Home = () => `
+        <div class="game-selector active" id="online">
           <div class="online active" id="option-choose">
             <button id="prepare-lobby">Create Lobby</button>
             <button id="list-lobbies">Join Lobby</button>
           </div>
-          <div class="online" id="lobby-list"><p>test</p></div>
-          <form class="online" id="lobby-form">
+        </div>`;
+
+export const Profile = () => `
+          <div class="profile">
+        <section id="profile-info">
+            <div id="avatar-container">
+                <img id="avatar" 
+     				src="./images/default_avatar.jpg" alt="User Avatar">
+                <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                <button id="change-avatar-btn">Change Avatar</button>
+            </div>
+            <h2>Welcome, <span id="username"></span></h2> 
+            <p>Display Name: <span id="display-name"></span></p>
+            <div id="user-stats">
+                <h3>Stats</h3>
+                <p>Wins: <span id="games-wins"></span></p>
+                <p>Losses: <span id="games-losses"></span></p>
+				<p>Draws: <span id="games-draws"></span></p>
+				<p>Games Played: <span id="games-played"></span></p>
+				<p>Pong Elo Ranking Score: <span id="ranking-score"></span></p>
+            </div>
+            <div id="two-fa-section">
+                <h3>Two-Factor Authentication</h3>
+                <label class="switch">
+                    <input type="checkbox" id="two-fa-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <span id="two-fa-status"></span>
+            </div>
+        </section>
+        <section id="friends-list">
+            <h3>Friends</h3>
+            <ul id="friends"></ul>
+            <div><input type="text" id="friend-username" placeholder="Enter friend's username"></div>
+            <div><button id="add-friend-btn">Add Friend</button></div>
+        <section id="friend-requests">
+            <h3>Pending Friend Requests</h3>
+            <ul id="pending-requests"></ul>
+            <div><button id="fetch-pending-requests">Refresh Requests</button></div>
+        </section>
+        </section>
+        <section id="match-history">
+            <h3>Match History</h3>
+            <div id="game-tabs">
+                <button class="game-tab active" data-game="two-player-pong">Pong</button>
+                <button class="game-tab" data-game="pac-pong">PacPong</button>
+                <button class="game-tab" data-game="four-player-tournament">Tournament</button>
+            </div>
+            <table id="match-history-table">
+                <thead id="match-history-head">
+                    <!-- Table headers will be inserted dynamically -->
+                </thead>
+                <tbody id="match-history-body"></tbody>
+            </table>
+        </section>
+      </div>`;
+
+export const UpdateProfile = () => 
+  `<form id="update-form">
+  <h1>Update Your Profile</h1>
+    <label for="display-name">Display Name:</label>
+    <input type="text" id="display-name" name="display_name" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="password">New Password (leave blank to keep current):</label>
+    <input type="password" id="password" name="password">
+
+    <label for="confirm-password">Confirm New Password:</label>
+    <input type="password" id="confirm-password" name="confirm_password">
+
+    <button type="submit">Update Profile</button>
+</form>`;
+        
+export const ListLobbies = () => `
+    <div class="game-selector active" id="online">
+        <div class="online active" id="lobby-list"><p>test</p></div>
+    </div>`;
+
+export const CreateLobby = () => `
+    <div class="game-selector active" id="online">
+        <form class="online active" id="lobby-form">
             <h2>Create a Lobby:</h2>
             <div>
               <label for="lobby-name">Lobby Name:</label>
@@ -95,13 +138,13 @@
                 </label>
               </div>
             </div>
-            <div>
-              <label for="lobby-password">password:</label>
-              <input type="password" id="lobby-password" name="lobby_password" placeholder="Leave empty for no password">
-            </div>
             <button type="submit">Create</button>
           </form>
-          <div class="online" id="tournament">
+    </div>`;
+
+export const TournamentLobby = () => `
+    <div class="game-selector active" id="online">
+        <div class="online active" id="tournament">
             <div id="tournament-prep">
               <h2 id="tournament-header">Tournament: </h2>
               <div>
@@ -132,7 +175,19 @@
             </div>
             <button class="start_button" id="start_tournament">Start Tournament</button>
           </div>
-          <div class="online" id="lobby">
+        <div class="online" id="game">
+            <p id="score">Left: 0 | Right: 0</p>
+            <div id="draw-type">
+              <p id="3d">3d</p>
+              <p id="2d" class="active">2d</p>
+            </div>
+            <canvas id="game-canvas"></canvas>
+        </div>
+    </div>`;
+
+export const Lobby = () => `
+    <div class="game-selector active" id="online">
+        <div class="online active" id="lobby">
             <h2 id="lobby-header">Lobby: </h2>
             <div>
               <button class="player_button" id="p1"><p>P1</p></button>
@@ -140,52 +195,13 @@
               <button class="player_button" id="p2"><p>P2</p></button>
             </div>
             <button class="start_button" id="start_game">Start Game</button>
-          </div>
-          <div class="online" id="game">
+        </div>
+        <div class="online" id="game">
             <p id="score">Left: 0 | Right: 0</p>
             <div id="draw-type">
               <p id="3d">3d</p>
               <p id="2d" class="active">2d</p>
             </div>
             <canvas id="game-canvas"></canvas>
-          </div>
-        </div> -->
-    </div>
-
-    <div class="sign sign-background active" id="sign-background"></div>
-    <div class="sign active " id="sign">
-      <form class="sign-in active" id="login-form">
-        <h2>Login</h2>
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit" class="start_button start_enabled">Log In</button>
-        <p>Don't have an account? <span id="signup-link">Sign Up</span></p>
-      </form>
-      <form class="sign-in" id="signup-form">
-        <h2>Sign Up</h2>
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit" class="start_button start_enabled">Sign Up</button>
-        <p>Already have an account? <span id="login-link">Log In</span></p>
-      </form>
-     </div>
-     <div class="sign sign-background" id="alert-background" ></div>
-     <div class="sign" id="alert">
-      <div class="sign-in active" id="alert-div"></div>
-     </div>
-    
-  </main>
-	
-  <!-- <script type="module" src="./js/game_3d.js"></script> -->
-  <!-- <script type="module" src="./js/auth.js"></script> -->
-  <script type="module" src="./js/globals.js"></script>
-  <script type="module" src="./js/game-handling.js"></script>
-  <script type="module" src="./js/lobby-creation.js"></script>
-  <script type="module" src="./js/lobby-handling.js"></script>
-  <script type="module" src="./js/index.js"></script>
-  <script type="module" src="./js/routing.js"></script>
-<!--   <script type="module" src="./js/profile.js"></script>
- -->
-</body>
-</html>
+        </div>
+    </div>`;

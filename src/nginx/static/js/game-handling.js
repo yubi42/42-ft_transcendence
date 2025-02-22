@@ -1,9 +1,15 @@
 import { drawGame2d, drawGame3d } from "./drawPongGame.js";
 import { gameplay_socket, initGameplaySocket, closeGameplaySocket, customAlert } from "./globals.js";
+import { navigateTo } from "./routing.js";
 
 
 export function startGame(lobby_id, player, player_count, roles, max_score)
 {
+  if (player_count == 1)
+    initGameplaySocket(`/ws/gameplay/local/${max_score}/${lobby_id}/`);
+  else
+    initGameplaySocket(`/ws/gameplay/${max_score}/${lobby_id}/`);
+
     let gameSettings = {
         scoreBoard : document.getElementById('score'),
         canvas : document.getElementById('game-canvas'),
@@ -26,13 +32,7 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
       mid_right: false
     };
 
-    document.querySelectorAll('.online').forEach(content => 
-        {
-          content.classList.remove('active');
-        }
-      );
-    document.getElementById('game').classList.add('active');
-
+    
     const twoD = document.getElementById('2d');
     const threeD = document.getElementById('3d');
 
@@ -53,11 +53,6 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
       console.log('3d selected');
       console.log(gameSettings);
     });
-
-    if (player_count == 1)
-      initGameplaySocket(`/ws/gameplay/local/${max_score}/${lobby_id}/`);
-    else
-      initGameplaySocket(`/ws/gameplay/${max_score}/${lobby_id}/`);
 
     const encodeState = (player, direction, moving) => {
       const playerBit = (player == 'p1' ? 0 : 1);
@@ -101,6 +96,12 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
       console.log('Gameplay WebSocket open');
       document.addEventListener('keydown', handleKeyDown);
       document.addEventListener('keyup', handleKeyUp);
+      document.querySelectorAll('.online').forEach(content => 
+        {
+          content.classList.remove('active');
+        }
+      );
+    document.getElementById('game').classList.add('active');
       gameplay_socket.send(JSON.stringify({
         type: 'player_joined',
       }))
@@ -129,17 +130,20 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
       else if(data.type == 'game_end') {
         console.log("game ending...");
         closeGameplaySocket();
+        customAlert(data.message);
         document.querySelectorAll('.online').forEach(content => 
           {
             content.classList.remove('active');
           }
         );
-        customAlert(data.message);
         document.getElementById('lobby').classList.add('active');
       }
     };
 
-    gameplay_socket.onerror = console.error;
+    gameplay_socket.onerror = () => {
+      history.go(0);
+      customAlert("Session expired. Please Log in again.");
+    }
 
     gameplay_socket.onclose = () => {
       console.log('Gameplay WebSocket closed');

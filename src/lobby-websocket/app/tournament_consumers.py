@@ -2,8 +2,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import httpx
 import random
-import logging
-logger = logging.getLogger(__name__)
+# import logging
+# logger = logging.getLogger(__name__)
 
 class PlayerSlots:
     def __init__(self):
@@ -46,7 +46,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 	################## CONNECT ##################
 
     async def connect(self):
-        logger.debug("in connect")
         self.lobby_id = self.scope['url_route']['kwargs']['lobby_id']
         self.user_name = self.scope["url_route"]["kwargs"]["user_name"]
         query_string = self.scope["query_string"].decode()
@@ -59,8 +58,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         self.lobby_session = None
         self.roles = {"p1": None, "p2": None, "p3": None, "p4": None}
 
-        logger.debug("self.token:")
-        logger.debug(self.token)
         if self.token:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -72,13 +69,10 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     },
                     cookies=self.cookies,
                 )
-                logger.debug("response.statuscode:")
-                logger.debug(response.status_code)
                 if response.status_code != 200:
                     await self.close(code=4001)
                     return
         else:
-            logger.debug("in else:")
             await self.close(code=4001)
             return
         
@@ -94,8 +88,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         # Handle messages from the WebSocket
         data = json.loads(text_data)
         action = data.get('action')
-        logger.debug("in receive")
-        logger.debug(data)
         if action == 'player_joined':
             if self.lobby_group_name not in self.LobbySessions:
                 self.LobbySessions[self.lobby_group_name] = LobbySession()
@@ -439,8 +431,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 	################## DISCONNECT ##################
 
     async def disconnect(self, close_code):
-        logger.debug("in disconnect")
-        logger.debug(self.lobby_session)
         if self.lobby_session is not None:
             if await self.player_left() == 0:
                 await self.delete_lobby_entry()

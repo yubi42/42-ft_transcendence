@@ -5,8 +5,8 @@ from urllib.parse import unquote
 
 from django.conf import settings
 
-import logging
-logger = logging.getLogger(__name__)
+# import logging
+# logger = logging.getLogger(__name__)
 
 # from multiprocessing.shared_memory import SharedMemory
 # from channels.db import database_sync_to_async
@@ -167,7 +167,6 @@ class PongGame(AsyncWebsocketConsumer):
 					self.game_session = self.GameSessions[self.lobby_group_name]
 					self.game_session.player_count += 1
 					if self.game_session.player_count == self.game_session.max_player_count:
-						# logger.debug("all players connected")
 						self.game_session.streaming = True
 						self.game_task = asyncio.create_task(self.pong())
 					# await self.send(text_data=json.dumps({'type': 'player_joined', 'status': 'success'}))
@@ -183,11 +182,9 @@ class PongGame(AsyncWebsocketConsumer):
 		# This is called when the WebSocket connection is closed
 		if self.game_session is not None:
 			self.game_session.player_count -= 1
-			# logger.debug("self.game_session.streaming: %s", self.game_session.streaming)
 			if self.game_session.player_count == 0:
 				if self.lobby_group_name in self.GameSessions:
 					del self.GameSessions[self.lobby_group_name]
-				# logger.debug("Deleting lobby....")
 				if str(self.lobby_id).isdigit():
 					url = f"http://lobby_api:8002/lobby/players/{self.lobby_id}/"
 					async with httpx.AsyncClient() as client:
@@ -226,9 +223,6 @@ class PongGame(AsyncWebsocketConsumer):
         	    					},
         	    					cookies=self.cookies,
 									)
-					# if response.status_code != 201:
-					# 	logger.debug(f"Failed to send score")
-						# return
 			else:
 				await self.channel_layer.group_send(
         			self.lobby_group_name,

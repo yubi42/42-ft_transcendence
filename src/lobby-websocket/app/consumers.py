@@ -1,8 +1,8 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import httpx
-import logging
-logger = logging.getLogger(__name__)
+# import logging
+# logger = logging.getLogger(__name__)
 
 class LobbyConsumer(AsyncWebsocketConsumer):
 
@@ -44,7 +44,6 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                 self.lobby_group_name,
                 self.channel_name
             )
-            logger.debug("csrf ok")
             await self.accept()
         else:
             await self.close(code=4001)
@@ -96,11 +95,6 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                     'message': 'ok'
                 }
             )
-
-        logger.debug("self.pac_pong: " + self.pac_pong)
-        logger.debug("self.roles['p3']: " +self.roles['p3'])
-        logger.debug("self.roles['p2']: " +self.roles['p2'])
-        logger.debug("self.roles['p1']: " +self.roles['p1'])
 
         if (self.pac_pong == 'false' or (self.pac_pong == 'true' and self.roles['p3'] != "None")) and self.roles['p1'] != "None" and self.roles['p2'] != "None":
             await self.channel_layer.group_send(
@@ -226,7 +220,7 @@ class LobbyConsumer(AsyncWebsocketConsumer):
                     url,
                     headers={
                         'Content-Type': 'application/json',
-                        'Authorization': self.token,
+                        'Authorization': f'Bearer {self.token}',
                     },
                     cookies=self.cookies,
                 )

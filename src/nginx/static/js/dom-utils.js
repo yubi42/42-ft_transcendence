@@ -1,6 +1,7 @@
 import { login, signup } from './auth.js';
 import { getAccessToken} from './auth.js';
 import { refreshAccessToken } from './profile.js';
+import { navigateTo } from './routing.js';
 
 export async function loadProfile() {
     try {
@@ -44,7 +45,7 @@ export async function loadProfile() {
         if (response.ok) {
             const data = await response.json();
             console.log("Profile Loaded:", data);
-            window.location.href = '/profile.html';
+            navigateTo("/profile");
         } else {
             console.error('Unexpected error:', response.status);
         }

@@ -1,26 +1,22 @@
 import {getCSRFToken, logout, getRefreshToken, getAccessToken, removeTokens} from './auth.js';
 import {displayMatchHistory} from './gameHistory.js';
+import { navigateTo } from './routing.js';
 
-document.addEventListener('DOMContentLoaded', function() {
-	if (window.location.pathname.includes('profile.html')) {
-		fetchProfileData();
-		fetchFriends();
-		loadAvatar();
-		displayMatchHistory('two-player-pong');
-		fetchPendingRequests();
-	}
-    const logoutButton = document.getElementById('logout-button');
-    if (logoutButton) logoutButton.addEventListener('click', logout);
+export function loadProfile() {
+	// if (window.location.pathname.includes('profile')) {
 
-    const settingsButton = document.getElementById('settings-button');
-    if (settingsButton) settingsButton.addEventListener('click', function () {
-        window.location.href = 'update-profile.html';
-    });
-
-    const homeButton = document.getElementById('home-button');
-    if (homeButton) homeButton.addEventListener('click', function () {
-        window.location.href = 'index.html';
-    });
+	fetchProfileData();
+	fetchFriends();
+	loadAvatar();
+	displayMatchHistory('two-player-pong');
+	fetchPendingRequests();
+	// }
+    // const logoutButton = document.getElementById('logout-button');
+    // if (logoutButton) logoutButton.addEventListener('click', logout);
+    // const homeButton = document.getElementById('home-button');
+    // if (homeButton) homeButton.addEventListener('click', function () {
+    //     navigateTo("/");
+    // });
 
     const changeAvatarBtn = document.getElementById('change-avatar-btn');
     const avatarUpload = document.getElementById('avatar-upload');
@@ -52,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
             displayMatchHistory(selectedGameMode);
         });
     });
-});
+}
 
 export async function refreshAccessToken() {
     const refreshToken = getRefreshToken();
