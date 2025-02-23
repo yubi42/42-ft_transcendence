@@ -1,7 +1,8 @@
 #three-canvas {
-    width: 50%;
+    width: 1000px;
+    height: 500px;
     aspect-ratio: 2 / 1;
-	background-color: rgb(228, 18, 210);
+	background-color: rgb(11, 4, 10);
 	border-color: crimson;
 }
 

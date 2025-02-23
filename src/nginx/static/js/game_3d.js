@@ -1,276 +1,375 @@
-
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
-const canvas = document.querySelector('#three-canvas');
-const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true
-});
-
-renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); // changed to canvas size, so that we do the sizing with css
-renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
-renderer.shadowMap.enabled = true;
-
-// Scene
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('rgb(30, 30, 30)');
-
-// Camera
-const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-camera.position.set(0, 5, 12);
-scene.add(camera);
-
-// Light
-const light = new THREE.AmbientLight(0x404040);
-scene.add(light);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-directionalLight.position.set(-3, 5, 1);
-scene.add(directionalLight);
-
-// Ball
-const ballRadius = 0.3;
-const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
-const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-const ball = new THREE.Mesh(ballGeometry, ballMaterial);
-scene.add(ball);
-
-// Paddles
-const paddleWidth = 2;
-const paddleHeight = 0.2;
-const paddleDepth = 1;
-const paddleGeometry = new THREE.BoxGeometry(paddleWidth, paddleHeight, paddleDepth);
-const paddleMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-
-const playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
-playerPaddle.position.set(0, 0.5, 5);
-scene.add(playerPaddle);
-
-const player2Paddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
-player2Paddle.position.set(0, 0.5, -5);
-scene.add(player2Paddle);
-
-// Side Walls
-const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
-const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1, 10), wallMaterial);
-leftWall.position.set(-5, 0.5, 0);
-scene.add(leftWall);
-
-const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1, 10), wallMaterial);
-rightWall.position.set(5, 0.5, 0);
-scene.add(rightWall);
-
-// Controls
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-
-// Variables
-let ballDirection = new THREE.Vector3(0.05, 0, 0.1);
-let playerScore = 0;
-let player2Score = 0;
-let gameOver = false;
+// Move all initialization into a function
+let scene, camera, renderer, controls, ball, playerPaddle, player2Paddle;
+let playerScoreText, player2ScoreText;
 let font;
+let currentScore = { left: 0, right: 0 };
 
-// Initialize Texts
-let playerScoreText, player2ScoreText, winMessageText, player1ControlsText, player2ControlsText, instructionsText;
-const fontLoader = new FontLoader();
+export function initGame3D(canvas) {
+    // Initialize renderer with explicit pixel ratio and size handling
+    renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: true
+    });
+    
+    // Set size with explicit pixel ratio
+    const pixelRatio = window.devicePixelRatio;
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
-// Load Font Once
-fontLoader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (loadedFont) => {
-    font = loadedFont;
-    createScoreTexts();
-    createControlTexts();
-    createInstructionsText();
-});
+    // Ensure canvas is visible and properly sized
+    canvas.style.display = 'block';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
 
-// Create Initial Score Texts
-function createScoreTexts() {
-    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    // Scene with darker background
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color('rgb(77, 76, 76)');
 
-    // Player 1 Score Text
+    // Enhanced lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+    scene.add(ambientLight);
+    
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+    mainLight.position.set(-3, 5, 1);
+    mainLight.castShadow = true;
+    scene.add(mainLight);
+
+    // Add point lights for dramatic effect
+    const pointLight1 = new THREE.PointLight(0x00ff00, 0.5, 10);
+    pointLight1.position.set(-5, 2, 0);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0xff0000, 0.5, 10);
+    pointLight2.position.set(5, 2, 0);
+    scene.add(pointLight2);
+
+    // Define world dimensions to match 2D aspect ratio
+    const worldWidth = 20;  // For 1000 pixels
+    const worldDepth = 10;  // For 500 pixels
+
+    // Enhanced ball with glow effect
+    const ballGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+    const ballMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xffffff,
+        metalness: 0.3,
+        roughness: 0.4,
+        emissive: 0xff0000,
+        emissiveIntensity: 0.5
+    });
+    ball = new THREE.Mesh(ballGeometry, ballMaterial);
+    ball.castShadow = true;
+    ball.position.y = 0.3; // Back to original height
+    scene.add(ball);
+
+    // Enhanced paddles with metallic effect
+    const paddleGeometry = new THREE.BoxGeometry(1, 0.5, 0.5);
+    const paddleMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x00ff00,
+        metalness: 0.6,
+        roughness: 0.2,
+        emissive: 0x00ff00,
+        emissiveIntensity: 0.2
+    });
+
+    playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    // Position before rotation: (x=forward/back, y=up/down, z=left/right)
+    playerPaddle.position.set(-10, 0.25, 0);
+    // After this rotation, x becomes z and z becomes -x
+    playerPaddle.rotation.y = Math.PI / 2;
+    playerPaddle.castShadow = true;
+    scene.add(playerPaddle);
+
+    player2Paddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    player2Paddle.position.set(10, 0.25, 0);
+    player2Paddle.rotation.y = Math.PI / 2;
+    player2Paddle.castShadow = true;
+    scene.add(player2Paddle);
+
+    // Load texture with error handling and logging
+    const textureLoader = new THREE.TextureLoader();
+    console.log('Attempting to load texture from:', '/images/42_logo.png');
+    
+    let floor; // Declare floor variable at a higher scope
+    
+    const texture = textureLoader.load(
+        '/images/42_logo.png',
+        (loadedTexture) => {
+            console.log('Texture loaded successfully');
+            loadedTexture.wrapS = THREE.RepeatWrapping;
+            loadedTexture.wrapT = THREE.RepeatWrapping;
+            loadedTexture.repeat.set(1, 1);
+            loadedTexture.flipY = false;
+            
+            // Update the floor material when texture is loaded
+            if (floor && floor.material) {
+                floor.material.map = loadedTexture;
+                floor.material.needsUpdate = true;
+            }
+        },
+        (progress) => {
+            console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
+        },
+        (error) => {
+            console.error('Error loading texture:', error);
+        }
+    );
+
+    // Floor (matches world dimensions)
+    const floorGeometry = new THREE.PlaneGeometry(worldWidth, worldDepth);
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+        map: texture,
+        side: THREE.DoubleSide,
+        metalness: 0.2,
+        roughness: 0.8,
+    });
+    floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Grid overlay (optional - for added effect)
+    const gridGeometry = new THREE.PlaneGeometry(worldWidth, worldDepth, 40, 20);
+    const gridMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x333333,
+        side: THREE.DoubleSide,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.2
+    });
+    const grid = new THREE.Mesh(gridGeometry, gridMaterial);
+    grid.rotation.x = Math.PI / 2;
+    grid.position.y = 0.01; // Slightly above the textured floor
+    grid.receiveShadow = true;
+    scene.add(grid);
+
+    // Walls (match world dimensions)
+    const wallMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x444444,
+        metalness: 0.5,
+        roughness: 0.5,
+        emissive: 0x222222,
+        emissiveIntensity: 0.5
+    });
+
+    const topWall = new THREE.Mesh(new THREE.BoxGeometry(worldWidth, 0.5, 0.1), wallMaterial);
+    topWall.position.set(0, 0.25, -worldDepth/2);
+    topWall.castShadow = true;
+    topWall.receiveShadow = true;
+    scene.add(topWall);
+
+    const bottomWall = new THREE.Mesh(new THREE.BoxGeometry(worldWidth, 0.5, 0.1), wallMaterial);
+    bottomWall.position.set(0, 0.25, worldDepth/2);
+    bottomWall.castShadow = true;
+    bottomWall.receiveShadow = true;
+    scene.add(bottomWall);
+
+    // Enable shadow mapping in renderer
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Camera - adjust to view from front
+    camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    camera.position.set(0, 8, 12); // Position camera in front
+    camera.lookAt(0, 0, 0);        // Look at the center
+
+    // Controls
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 5;
+    controls.maxDistance = 15;
+    controls.maxPolarAngle = Math.PI / 2;
+
+    // Load Font and create score displays
+    const fontLoader = new FontLoader();
+    fontLoader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (loadedFont) => {
+        font = loadedFont;
+        createScoreDisplays();
+        createInstructionsText(canvas.max_score);
+    });
+}
+
+function createScoreDisplays() {
+    if (!font || !scene) return;
+
+    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+
+    // Create initial score texts with depth instead of height
     playerScoreText = new THREE.Mesh(
-        new TextGeometry(playerScore.toString(), { font, size: 0.5, height: 0.1 }),
+        new TextGeometry(currentScore.left.toString(), {
+            font: font,
+            size: 0.8,
+            depth: 0.1,  // Changed from height to depth
+        }),
         textMaterial
     );
-    playerScoreText.position.set(-3, 3, 0);
+    playerScoreText.position.set(-2, 3, 0);
     scene.add(playerScoreText);
 
-    // Player 2 Score Text
     player2ScoreText = new THREE.Mesh(
-        new TextGeometry(player2Score.toString(), { font, size: 0.5, height: 0.1 }),
+        new TextGeometry(currentScore.right.toString(), {
+            font: font,
+            size: 0.8,
+            depth: 0.1,  // Changed from height to depth
+        }),
         textMaterial
     );
-    player2ScoreText.position.set(3, 3, 0);
+    player2ScoreText.position.set(2, 3, 0);
     scene.add(player2ScoreText);
 }
 
-// Create Control Texts Above Paddles
-function createControlTexts() {
-    const textMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+function updateScoreDisplays() {
+    if (!font || !scene) return;
 
-    // Player 1 Controls Text
-    player1ControlsText = new THREE.Mesh(
-        new TextGeometry('<- Arrow Keys ->', { font, size: 0.3, height: 0.05 }),
+    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 }); // Yellow color
+
+    // Update left score
+    if (playerScoreText) {
+        scene.remove(playerScoreText);
+        playerScoreText.geometry.dispose();
+    }
+    playerScoreText = new THREE.Mesh(
+        new TextGeometry(currentScore.left.toString(), {
+            font: font,
+            size: 0.8,
+            depth: 0.1,  // Changed from height to depth
+        }),
         textMaterial
     );
-    player1ControlsText.position.set(-1.5, 1, 5);
-    scene.add(player1ControlsText);
+    playerScoreText.position.set(-2, 3, 0);
+    scene.add(playerScoreText);
 
-    // Player 2 Controls Text
-    player2ControlsText = new THREE.Mesh(
-        new TextGeometry('<- A - D ->', { font, size: 0.3, height: 0.05 }),
+    // Update right score
+    if (player2ScoreText) {
+        scene.remove(player2ScoreText);
+        player2ScoreText.geometry.dispose();
+    }
+    player2ScoreText = new THREE.Mesh(
+        new TextGeometry(currentScore.right.toString(), {
+            font: font,
+            size: 0.8,
+            depth: 0.1,  // Changed from height to depth
+        }),
         textMaterial
     );
-    player2ControlsText.position.set(-1.5, 1, -5);
-    scene.add(player2ControlsText);
+    player2ScoreText.position.set(2, 3, 0);
+    scene.add(player2ScoreText);
 }
 
-// Create Instructions Text at the Back
-function createInstructionsText() {
-    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Gold color
+// Add function to create instructions text
+function createInstructionsText(max_score) {
+    if (!font) return;
 
-    instructionsText = new THREE.Mesh(
-        new TextGeometry('Score 10 points to win!', { font, size: 0.5, height: 0.1 }),
+    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const instructionsText = new THREE.Mesh(
+        new TextGeometry(`Score ${max_score} points to win!`, {
+            font: font,
+            size: 0.5,
+            depth: 0.1,  // Changed from height to depth
+        }),
         textMaterial
     );
-    instructionsText.position.set(-10, 5, -8);
+    instructionsText.position.set(-3, 3, -4);
     scene.add(instructionsText);
 }
 
-// Function to Update Score Texts
-function updateScore() {
-    if (font) {
-        // Update Player 1 Score Text
-        scene.remove(playerScoreText);
-        playerScoreText.geometry.dispose();
-        playerScoreText.geometry = new TextGeometry(playerScore.toString(), { font, size: 0.5, height: 0.1 });
-        scene.add(playerScoreText);
+export function updateGameState(gameSettings, paddleL, paddleR, ballX, ballY) {
+    if (!scene || !ball || !playerPaddle || !player2Paddle) return;
 
-        // Update Player 2 Score Text
-        scene.remove(player2ScoreText);
-        player2ScoreText.geometry.dispose();
-        player2ScoreText.geometry = new TextGeometry(player2Score.toString(), { font, size: 0.5, height: 0.1 });
-        scene.add(player2ScoreText);
-    }
-}
+    const worldWidth = 20;  // Match the initialization values
+    const worldDepth = 10;
 
-// Function to Show Win Message
-function showWinMessage(winner) {
-    if (font && !winMessageText) {
-        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 }); // Gold color
-        winMessageText = new THREE.Mesh(
-            new TextGeometry(`${winner} Wins!`, { font, size: 0.7, height: 0.2 }),
-            textMaterial
-        );
-        winMessageText.position.set(-3, 4, 0);
-        scene.add(winMessageText);
-    }
-}
+    // Store the initial Z offset that we set in the paddle creation
+    const zOffset = 0.5;  // Match the value we set in position.set()
 
-// Move Player Paddle
-function movePlayerPaddle(direction) {
-    playerPaddle.position.x += direction * 0.2;
-    playerPaddle.position.x = Math.max(-4, Math.min(4, playerPaddle.position.x));
-}
+    // Update paddles - add the zOffset to maintain the forward position
+    playerPaddle.position.z = (((paddleL / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2)) + zOffset;
+    player2Paddle.position.z = (((paddleR / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2)) + zOffset;
 
-function movePlayer2Paddle(direction) {
-    player2Paddle.position.x += direction * 0.2;
-    player2Paddle.position.x = Math.max(-4, Math.min(4, player2Paddle.position.x));
-}
+    // Update ball position
+    ball.position.z = ((ballY / gameSettings.canvas.height) * worldDepth) - (worldDepth / 2);
+    ball.position.x = ((ballX / gameSettings.canvas.width) * worldWidth) - (worldWidth / 2);
 
-// Detect Collisions and Update Ball Position
-function updateBall() {
-    if (gameOver) return;
-
-    ball.position.add(ballDirection);
-
-    // Bounce off walls
-    if (ball.position.x > 4.9 || ball.position.x < -4.9) {
-        ballDirection.x = -ballDirection.x;
+    // Update scores
+    const scoreText = gameSettings.scoreBoard.textContent;
+    const scores = scoreText.match(/(\d+)\s*\|\s*(\d+)/);
+    if (scores) {
+        currentScore.left = parseInt(scores[1]);
+        currentScore.right = parseInt(scores[2]);
+        updateScoreDisplays();
     }
 
-    // Bounce off paddles
-    if (ball.position.distanceTo(playerPaddle.position) < 0.6) {
-        ballDirection.z = -ballDirection.z;
-    }
-    if (ball.position.distanceTo(player2Paddle.position) < 0.6) {
-        ballDirection.z = -ballDirection.z;
-    }
-
-    // Score and reset if ball passes paddles
-    if (ball.position.z > 6) {
-        player2Score++;
-        checkGameOver('Player 2');
-        resetBall();
-    } else if (ball.position.z < -6) {
-        playerScore++;
-        checkGameOver('Player 1');
-        resetBall();
-    }
-    updateScore();
+    // Store max_score on canvas for later use
+    renderer.domElement.max_score = gameSettings.max_score;
 }
 
-// Check Game Over
-function checkGameOver(winner) {
-    if (playerScore >= 10 || player2Score >= 10) {
-        gameOver = true;
-        showWinMessage(winner);
-        // showResetButton();
-    }
-}
-
-// Reset Ball Position
-function resetBall() {
-    ball.position.set(0, 0.5, 0);
-    ballDirection.z = -ballDirection.z;
-}
-
-// Show Reset Button
-/* function showResetButton() {
-    const button = document.createElement('button');
-    button.innerText = 'Reset Game';
-    button.classList.add('reset-button');
-    document.body.appendChild(button);
-
-    button.addEventListener('click', () => {
-        playerScore = 0;
-        player2Score = 0;
-        gameOver = false;
-        updateScore();
-
-        // Remove win message if it exists
-        if (winMessageText) {
-            scene.remove(winMessageText);
-            winMessageText.geometry.dispose();
-            winMessageText = null;
-        }
-        button.remove();
-    });
-} */
-
-// Animation loop
-function animate() {
-    controls.update();
-    updateBall();
+export function animate() {
+    if (!renderer || !scene || !camera) return;
+    
+    controls?.update();
     renderer.render(scene, camera);
-    requestAnimationFrame(animate);
+    window.animationFrameId = requestAnimationFrame(animate);
 }
 
-// Key controls
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowLeft') movePlayerPaddle(-1);
-    if (event.key === 'ArrowRight') movePlayerPaddle(1);
-    if (event.key === 'a') movePlayer2Paddle(-1);
-    if (event.key === 'd') movePlayer2Paddle(1);
-});
-animate();
+export function resizeRenderer(width, height) {
+    if (!renderer || !camera) return;
+    
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height, false);
+}
 
-// Resize handling
-// function setLayout() {
-//     camera.aspect = window.innerWidth / window.innerHeight;
-//     camera.updateProjectionMatrix();
-//     renderer.setSize(window.innerWidth, window.innerHeight);
-// }
-// window.addEventListener('resize', setLayout);
+// Add cleanup function
+export function cleanup() {
+    // Cancel any pending animation frame
+    if (window.animationFrameId) {
+        cancelAnimationFrame(window.animationFrameId);
+        window.animationFrameId = null;
+    }
+
+    if (scene) {
+        // Dispose of all meshes, materials, and geometries
+        scene.traverse((object) => {
+            if (object.isMesh) {
+                if (object.geometry) {
+                    object.geometry.dispose();
+                }
+                if (object.material) {
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(material => material.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
+            }
+        });
+
+        // Clear the scene
+        while(scene.children.length > 0) {
+            scene.remove(scene.children[0]);
+        }
+    }
+    
+    if (controls) {
+        controls.dispose();
+        controls = null;
+    }
+
+    // Reset all variables but keep renderer and scene
+    camera = null;
+    ball = null;
+    playerPaddle = null;
+    player2Paddle = null;
+    playerScoreText = null;
+    player2ScoreText = null;
+    font = null;
+    currentScore = { left: 0, right: 0 };
+}
