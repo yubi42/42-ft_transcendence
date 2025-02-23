@@ -203,5 +203,6 @@ export const Lobby = () => `
               <p id="2d" class="active">2d</p>
             </div>
             <canvas id="game-canvas"></canvas>
+            <canvas id="three-canvas" style="display:none;"></canvas>
         </div>
     </div>`;

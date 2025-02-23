@@ -2,6 +2,12 @@ FROM nginx
 
 RUN rm -f /etc/nginx/conf.d/*
 
+# Create necessary directories
+RUN mkdir -p /usr/share/nginx/html/static/images \
+    && mkdir -p /usr/share/nginx/html/static/js \
+    && mkdir -p /usr/share/nginx/html/static/css
+
+# Copy configuration
 COPY ./config /etc/nginx/conf.d/
 
 RUN apt-get update && \
