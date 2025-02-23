@@ -1,8 +1,6 @@
-import { getCSRFToken } from "./auth.js";
-import { gameplay_socket, initGameplaySocket, closeGameplaySocket } from "./globals.js";
 import { drawGame2d, drawGame3d } from "./drawPongGame.js";
+import { toggle3dButton } from "./game-buttons.js";
 import { gameplay_socket, initGameplaySocket, closeGameplaySocket, customAlert } from "./globals.js";
-import { navigateTo } from "./routing.js";
 
 
 export function startGame(lobby_id, player, player_count, roles, max_score)
@@ -36,28 +34,28 @@ export function startGame(lobby_id, player, player_count, roles, max_score)
     mid_left: false,
     mid_right: false
   };
-
+  toggle3dButton();
     
-    const twoD = document.getElementById('2d');
-    const threeD = document.getElementById('3d');
+    // const twoD = document.getElementById('2d');
+    // const threeD = document.getElementById('3d');
 
-    twoD.addEventListener('click', 
-      () => {
-      gameSettings.contextType = '2d';
-      threeD.classList.remove('active');
-      twoD.classList.add('active');
-      console.log('2d selected');
-      console.log(gameSettings);
-    });
+    // twoD.addEventListener('click', 
+    //   () => {
+    //   gameSettings.contextType = '2d';
+    //   threeD.classList.remove('active');
+    //   twoD.classList.add('active');
+    //   console.log('2d selected');
+    //   console.log(gameSettings);
+    // });
 
-    threeD.addEventListener('click', 
-      () => {
-      gameSettings.contextType = '3d';
-      twoD.classList.remove('active');
-      threeD.classList.add('active');
-      console.log('3d selected');
-      console.log(gameSettings);
-    });
+    // threeD.addEventListener('click', 
+    //   () => {
+    //   gameSettings.contextType = '3d';
+    //   twoD.classList.remove('active');
+    //   threeD.classList.add('active');
+    //   console.log('3d selected');
+    //   console.log(gameSettings);
+    // });
 
     const encodeState = (player, direction, moving) => {
       const playerBit = (player == 'p1' ? 0 : 1);
