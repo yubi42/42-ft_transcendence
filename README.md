@@ -1,2 +1,1 @@
-# FT_TRANSCENDENCE
-Final 42 Project.
+## Work in Progress!
